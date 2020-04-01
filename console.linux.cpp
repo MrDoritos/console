@@ -21,8 +21,6 @@ console::constructor::constructor() {
 	auto map_color = [](int i) {
 		switch (i) {
 			case COLOR_BLUE: return COLOR_RED;
-			case COLOR_CYAN: return COLOR_YELLOW;
-			case COLOR_YELLOW: return COLOR_MAGENTA;
 			case COLOR_RED: return COLOR_BLUE;
 			default: return i;
 		}
