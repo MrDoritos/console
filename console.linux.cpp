@@ -91,10 +91,10 @@ int console::getConsoleHeight() {
 
 void console::setConsoleColor(int color) {
 	const auto getCursesColor = [](int i) {
-		short fg = i & 0b00001111, bg = i & 0b11110000;
+		short fg = i & 0b00000111, bg = i & 0b01110000;
 		int c = 0;
 		bg >>= 4;
-		c = (bg - 1) * 8;
+		c = bg * 8;
 		c += fg;
 		return c + 1;
 	};

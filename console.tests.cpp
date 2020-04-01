@@ -31,6 +31,10 @@ int main() {
 	for (i = 0; i < 64; i++) {
 		console::write(i % cwidth, ((i / cwidth) + 20) % cheight, '*', (i % 8) | (((i / 8) % 8) << 4));
 	}
+
+	for (i = 0; i < 8; i++) {
+		console::write(i % cwidth, ((i / cwidth) + 30) % cheight, ' ', i << 4);
+	}
 	//sleep(-1);
 	console::readKey();
 }
