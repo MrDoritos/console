@@ -24,11 +24,13 @@ int main() {
 	
 	for (i = 0; i < 64; i++) {
 		//fprintf(stderr, "[%i] fg: %i bg: %i", i + 1, i % 8, (((i) / 8) % 8));
-		console::write(i % cwidth, (i / cwidth) % cheight, '#', (i % 8) | ((((i) / 8) % 8) << 3));
+		console::write(i % cwidth, (i / cwidth) % cheight, '#', (i % 8) | ((((i) / 8) % 8) << 4));
+					 //x		   y							each fg   
 	}
 	
 	for (i = 0; i < 64; i++) {
-		console::write(i % cwidth, ((i / cwidth) + 20) % cheight, '*', (i % 8) | (((i / 8) % 8) << 3));
+		console::write(i % cwidth, ((i / cwidth) + 20) % cheight, '*', (i % 8) | (((i / 8) % 8) << 4));
 	}
-	sleep(-1);
+	//sleep(-1);
+	console::readKey();
 }
