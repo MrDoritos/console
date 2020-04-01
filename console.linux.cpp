@@ -66,7 +66,7 @@ console::constructor::~constructor() {
 }
 
 int console::getImage() {
-	return IMAGE_LINUX
+	return IMAGE_LINUX;
 }
 
 int console::readKey() {
