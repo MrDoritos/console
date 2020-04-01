@@ -96,7 +96,8 @@ class console {
 		SetConsoleActiveScreenBuffer(GetStdHandle(STD_INPUT_HANDLE));
 		
 		inHandle = GetStdHandle(STD_INPUT_HANDLE);
-		SetConsoleMode(inHandle, ENABLE_EXTENDED_FLAGS | ENABLE_WINDOW_INPUT | ENABLE_MOUSE_INPUT);
+		//SetConsoleMode(inHandle, ENABLE_EXTENDED_FLAGS | ENABLE_WINDOW_INPUT | ENABLE_MOUSE_INPUT);
+		SetConsoleMode(inHandle, ENABLE_WINDOW_INPUT);
 	}
 	CONSOLE static void CONSOLECALL _destruct() {
 		SetConsoleActiveScreenBuffer(ogConHandle);
