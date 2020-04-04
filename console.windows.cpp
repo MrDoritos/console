@@ -88,15 +88,20 @@ void console::setConsoleColor(int color) {
 	SetConsoleTextAttribute(console::conHandle, console::_getCharInfoColor(color));
 }
 
+//Cyan and yellow are flipped with windows
 int console::_getCharInfoColor(int color) {
-	int attr = 0;
-	//auto color_map = [](int i) {
-	//	return i;
-	//};
-	attr |= (((color & 0b11110000) >> 4) << 4);
-//	attr <<= 1;
-	attr |= (color & 0b00001111);
-	return attr;
+	if (color & 0b00000011)
+		color = (color ^ 0b00000111) | 0b00000110;
+	else
+		if (color & 0b00000110)
+			color = (color ^ 0b00000111) | 0b00000011;
+	
+	if (color & 0b00110000)
+		color = (color ^ 0b01110000) | 0b01100000;
+	else
+		if (color & 0b01100000)
+			color = (color ^ 0b01110000) | 0b00110000;	
+	return color;
 }
 
 int console::readKey() {
