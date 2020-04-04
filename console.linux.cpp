@@ -133,6 +133,14 @@ void console::write(int x, int y, char character) {
 	refresh();
 }
 
+void console::write(int x, int y, std::string& str) {
+	for (int i = 0; i < str.length(); i++) {
+		mvaddch(y, x, str[i]);
+	}
+
+	refresh();
+}
+
 void console::write(int x, int y, char character, int color) {
 	console::setConsoleColor(color);
 	console::write(x, y, character);
