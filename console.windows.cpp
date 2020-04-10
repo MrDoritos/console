@@ -113,6 +113,7 @@ int console::readKey() {
 		switch (irec.EventType) {
 			case KEY_EVENT: 
 			{
+				if (irec.Event.KeyEvent.bKeyDown)
 				return irec.Event.KeyEvent.uChar.AsciiChar;
 			}
 			break;
