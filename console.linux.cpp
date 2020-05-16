@@ -11,11 +11,9 @@
 console::constructor console::cons;
 winsize console::w;
 int console::_activeColor;
+bool console::ready;
 
-console::constructor::constructor() {
-//0 4 2 3 1 5 6 7				   0            1 0b001         2 0b010     3   0b011   4 0b100     5   0b101     6 0b110       7 0b111
-	//					   0 		4 0b100		3 0b011     2	0b010	1 0b001	    5	0b101     6 0b110	7 0b111
-	//fprintf(stderr, "%i %i %i %i %i %i %i %i", COLOR_BLACK, COLOR_BLUE, COLOR_GREEN, COLOR_YELLOW, COLOR_RED, COLOR_MAGENTA, COLOR_CYAN, COLOR_WHITE);
+console::constructor::constructor() {	
 	initscr();
 	start_color();
 	auto map_color = [](int i) {
@@ -28,39 +26,16 @@ console::constructor::constructor() {
 	for (int i = 0; i < 64; i++) {
 		init_pair(i + 1, map_color(i % 8), map_color((i / 8) % 8));
 	}
-	//for (int i = 0; i < 256; i++) {
-	//	init_pair(i + 1, map_color(i % 16), map_color((i / 16) % 16));
-	//}
-	/*
-	init_pair(1, COLOR_WHITE, COLOR_BLACK);
-	init_pair(2, COLOR_WHITE, COLOR_BLUE);
-	init_pair(3, COLOR_WHITE, COLOR_GREEN);
-	init_pair(4, COLOR_WHITE, COLOR_YELLOW);
-	init_pair(5, COLOR_WHITE, COLOR_RED);
-	init_pair(6, COLOR_WHITE, COLOR_MAGENTA);
-	init_pair(7, COLOR_WHITE, COLOR_CYAN);
-	init_pair(8, COLOR_WHITE, COLOR_WHITE);
-	*/
-	/*
-	init_pair(1, FBLACK, BBLACK);
-	init_pair(2, FBLUE, BBLACK);
-	init_pair(3, FGREEN, BBLACK);
-	init_pair(4, FYELLOW, BBLACK);
-	init_pair(5, FRED, BBLACK);
-	init_pair(6, FMAGENTA, BBLACK);
-	init_pair(7, FCYAN, BBLACK);
-	init_pair(8, FWHITE, BBLACK);
-	init_pair(9, FBLACK, BBLUE);
-	init_pair(10, FBLUE, BBLUE);
-	init_pair(11, FGREEN, BBLUE);
-	*/
+	
 	cbreak();
 	noecho();
 	console::_activeColor = -1;
+	ready = true;
 }
 
 console::constructor::~constructor() {
 	endwin();
+	ready = false;
 }
 
 int console::getImage() {
@@ -68,6 +43,12 @@ int console::getImage() {
 }
 
 int console::readKey() {
+	timeout(-1);
+	return getch();
+}
+
+int console::readKeyAsync() {
+	timeout(0);
 	return getch();
 }
 
@@ -113,6 +94,35 @@ void console::clear() {
 	refresh();
 }
 
+void console::setCursorLeft(int x) {}
+
+void console::setCursorTop(int y) {}
+
+void console::setCursorPosition(int x, int y) {}
+
+void console::write(int x, int y, std::string& str) {
+	int w = console::getConsoleWidth();
+	int h = console::getConsoleHeight();
+	if (y >= h || x >= w)
+		return;
+	for (int i = 0; i < str.length() && i + x < w; i++) {
+		mvaddch(y, x + i, str[i]);
+	}
+	refresh();
+}
+
+void console::write(int x, int y, std::string& str, char c) {
+	int w = console::getConsoleWidth();
+	int h = console::getConsoleHeight();
+	if (y >= h || x >= w)
+		return;
+	for (int i = 0; i < str.length() && i + x < w; i++) {
+		setConsoleColor(c);
+		mvaddch(y, x + i, str[i]);
+	}
+	refresh();
+}
+
 void console::write(char* fb, char* cb, int length) {
 	int i = 0;
 	int w = console::getConsoleWidth();
@@ -126,6 +136,18 @@ void console::write(char* fb, char* cb, int length) {
 	refresh();
 }
 
+void console::write(wchar_t* fb, char* cb, int length) {
+	int i = 0;
+	int w = getConsoleWidth();
+	int h = getConsoleHeight();
+	for (int y = 0; y < h; y++) {
+		for (int x = 0; x < w; x++) {
+			setConsoleColor(cb[i]);
+			mvaddch(y, x, fb[i++]);
+		}
+	}
+}
+
 void console::write(int x, int y, char character) {
 	mvaddch(y, x, character);
 	
@@ -133,6 +155,7 @@ void console::write(int x, int y, char character) {
 	refresh();
 }
 
+/*
 void console::write(int x, int y, std::string& str) {
 	for (int i = 0; i < str.length(); i++) {
 		mvaddch(y, x, str[i]);
@@ -140,8 +163,9 @@ void console::write(int x, int y, std::string& str) {
 
 	refresh();
 }
+*/
 
-void console::write(int x, int y, char character, int color) {
+void console::write(int x, int y, char character, char color) {
 	console::setConsoleColor(color);
 	console::write(x, y, character);
 }

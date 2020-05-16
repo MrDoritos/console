@@ -19,6 +19,7 @@ HANDLE console::conHandle;
 HANDLE console::inHandle;
 HANDLE console::ogConHandle;
 int console::_activeColor;
+bool console::ready;
 
 console::constructor::constructor() {
 	console::_construct();
@@ -38,15 +39,42 @@ int console::getImage() {
 
 void console::write(int x, int y, std::string& str) {
 	int length = str.length();
-	CHAR_INFO framebuffer[length];
+	//CHAR_INFO framebuffer[length]; //WTF CL.EXE	
+	CHAR_INFO* framebuffer = (CHAR_INFO*)alloca(sizeof(CHAR_INFO) * length);
+	
 	for (int i = 0; i < length; i++) {
 		framebuffer[i].Char.UnicodeChar = str[i];
-		framebuffer[i].Attributes = FWHITE | BBLACK;
+		framebuffer[i].Attributes = console::_activeColor;
 	}
 	CONSOLE_SCREEN_BUFFER_INFO csbi;
 	GetConsoleScreenBufferInfo(console::conHandle, &csbi);
-	SMALL_RECT srwin = { x, y, x + length - 1, y };
+	SMALL_RECT srwin = { short(x), short(y), short(x + length - 1), short(y) };
 	WriteConsoleOutput(console::conHandle, framebuffer, csbi.dwSize, {0,0}, &srwin);
+}
+
+void console::write(int x, int y, const char* str) {
+	int length = strlen(str);
+	CHAR_INFO* framebuffer = (CHAR_INFO*)alloca(sizeof(CHAR_INFO) * length);
+	
+	for (int i = 0; i < length; i++) {
+		framebuffer[i].Char.UnicodeChar = str[i];
+		framebuffer[i].Attributes = console::_activeColor;
+	}
+	
+	CONSOLE_SCREEN_BUFFER_INFO csbi;
+	GetConsoleScreenBufferInfo(console::conHandle, &csbi);
+	SMALL_RECT srwin = { short(x), short(y), short(x + length - 1), short(y) };
+	WriteConsoleOutput(console::conHandle, framebuffer, csbi.dwSize, {0,0}, &srwin);
+}
+
+void console::write(int x, int y, const char* str, char color) {
+	console::setConsoleColor(color);
+	console::write(x,y,str);
+}
+
+void console::write(int x, int y, std::string& str, char color) {
+	console::setConsoleColor(color);
+	console::write(x,y,str);
 }
 
 int console::getConsoleWidth() {
@@ -90,25 +118,50 @@ void console::setConsoleColor(int color) {
 
 //Cyan and yellow are flipped with windows
 int console::_getCharInfoColor(int color) {
-	if (color & 0b00000011)
-		color = (color ^ 0b00000111) | 0b00000110;
+	if ((color & FWHITE) == FCYAN)
+		color = (color & ~FWHITE) | FYELLOW;
 	else
-		if (color & 0b00000110)
-			color = (color ^ 0b00000111) | 0b00000011;
+	if ((color & FWHITE) == FYELLOW)
+		color = (color & ~FWHITE) | FCYAN;
 	
-	if (color & 0b00110000)
-		color = (color ^ 0b01110000) | 0b01100000;
+	if ((color & BWHITE) == BCYAN)
+		color = (color & ~BWHITE) | BYELLOW;
 	else
-		if (color & 0b01100000)
-			color = (color ^ 0b01110000) | 0b00110000;	
+	if ((color & BWHITE) == BYELLOW)
+		color = (color & ~BWHITE) | BCYAN;	
+	
 	return color;
 }
 
-int console::readKey() {
-	//return getchar();
+int console::readKeyAsync() {
 	INPUT_RECORD irec;
+	KEY_EVENT_RECORD krec;
 	DWORD n;
-	ReadConsoleInput(console::inHandle, &irec, 1, &n);
+	DWORD c;
+	GetNumberOfConsoleInputEvents(console::inHandle, &c);
+	if (c > 0) {
+		ReadConsoleInput(console::inHandle, &irec, 1, &n);
+		if (irec.EventType == KEY_EVENT && ((KEY_EVENT_RECORD&)irec.Event).bKeyDown)
+			return irec.Event.KeyEvent.uChar.AsciiChar;
+		else
+			return 0;
+	} else {
+		return 0;
+	}
+}
+
+int console::readKey() {
+	INPUT_RECORD irec;
+	KEY_EVENT_RECORD krec;
+	DWORD n;
+	while (true) {
+		ReadConsoleInput(console::inHandle, &irec, 1, &n);
+		if (irec.EventType == KEY_EVENT && ((KEY_EVENT_RECORD&)irec.Event).bKeyDown) {
+			krec = (KEY_EVENT_RECORD&)irec.Event;
+			return krec.uChar.AsciiChar;
+		}
+	}
+	/*
 	for (int i = 0; i < n; i++) {
 		switch (irec.EventType) {
 			case KEY_EVENT: 
@@ -119,29 +172,45 @@ int console::readKey() {
 			break;
 		}
 	}
+	*/
 	return -1;
 }
 
 void console::write(char* fb, char* cb, int length) {
-	CHAR_INFO framebuffer[length];
+	CHAR_INFO* framebuffer = (CHAR_INFO*)alloca(sizeof(CHAR_INFO) * length);
+	
 	wchar_t b;
 	for (int i = 0; i < length; i++) {
 		b = fb[i];
 		b &= 0x00FF;
 		framebuffer[i].Char.UnicodeChar = b;
-		framebuffer[i].Attributes = cb[i];
+		framebuffer[i].Attributes = _getCharInfoColor(cb[i]);
 	}
 	CONSOLE_SCREEN_BUFFER_INFO csbi;
 	GetConsoleScreenBufferInfo(console::conHandle, &csbi);
-	SMALL_RECT srwin = { 0, 0, csbi.dwSize.X - 1, csbi.dwSize.Y };
+	SMALL_RECT srwin = { 0, 0, short(csbi.dwSize.X - 1), csbi.dwSize.Y };
 	WriteConsoleOutput(console::conHandle, framebuffer, csbi.dwSize, {0,0}, &srwin);
-	//length -= 1;
-	//for (int i = 0; i < length; i++) {
-	//	console::write(i % console::getConsoleHeight(), i / console::getConsoleWidth() , fb[i], cb[i]);
-	//}
 }
 
-void console::write(int x, int y, char character, int color) {		
+void console::write(wchar_t* fb, char* cb, int length) {
+	{
+		CHAR_INFO framebuffer[length];
+		for (int i = 0; i < length; i++) {
+			framebuffer[i].Char.UnicodeChar = fb[i];
+			framebuffer[i].Attributes = _getCharInfoColor(cb[i]);
+		}
+		console::write(&framebuffer[0], length);
+	}
+}
+
+void console::write(CHAR_INFO* fb, int length) {
+	CONSOLE_SCREEN_BUFFER_INFO csbi;
+	GetConsoleScreenBufferInfo(console::conHandle, &csbi);
+	SMALL_RECT srwin = { 0, 0, short(csbi.dwSize.X - 1), csbi.dwSize.Y };
+	WriteConsoleOutput(console::conHandle, fb, csbi.dwSize, {0,0}, &srwin);	
+}
+
+__declspec(dllexport) void CONSOLECALL console::write(int x, int y, char character, char color) {		
 	//SetConsoleTextAttribute(console::conHandle, console::_getCharInfoColor(color));
 	console::setConsoleColor(color);
 	console::write(x, y, character);
@@ -172,17 +241,17 @@ void console::write(int x, int y, char character, int color) {
 void console::setCursorPosition(int x, int y) {
 	//CONSOLE_SCREEN_BUFFER_INFO csbi;
 	//GetConsoleScreenBufferInfo(console::conHandle, &csbi);
-	SetConsoleCursorPosition(console::conHandle, { x, y });
+	SetConsoleCursorPosition(console::conHandle, { short(x), short(y) });
 }
 
 void console::setCursorLeft(int x) {
 	CONSOLE_SCREEN_BUFFER_INFO csbi;
 	GetConsoleScreenBufferInfo(console::conHandle, &csbi);
-	SetConsoleCursorPosition(console::conHandle, { x, csbi.dwCursorPosition.Y });
+	SetConsoleCursorPosition(console::conHandle, { short(x), csbi.dwCursorPosition.Y });
 }
 
 void console::setCursorTop(int y) {
 	CONSOLE_SCREEN_BUFFER_INFO csbi;
 	GetConsoleScreenBufferInfo(console::conHandle, &csbi);
-	SetConsoleCursorPosition(console::conHandle, { csbi.dwCursorPosition.X, y });
+	SetConsoleCursorPosition(console::conHandle, { csbi.dwCursorPosition.X, short(y) });
 }

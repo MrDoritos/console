@@ -11,7 +11,8 @@
 
 #if defined DLLEXPORT
 #define CONSOLE __declspec(dllexport)
-#define CONSOLECALL __cdecl
+//#define CONSOLECALL __cdecl
+#define CONSOLECALL __stdcall
 
 extern "C" {
 #else
@@ -46,29 +47,43 @@ extern "C" {
 #define IMAGE_POSIX 0x02
 #define IMAGE_LINUX IMAGE_POSIX
 
+#ifndef __WIN32
+#define VK_ESCAPE 0x1B
+#define VK_ENTER 0x0D
+#define VK_DELETE 0x2E
+#define VK_CONTROL 0x11
+#define VK_SHIFT 0x10
+#endif
+
+#define VK_LEFT_ 0xCB
+#define VK_UP_ 0xC8
+#define VK_RIGHT_ 0xCD
+#define VK_DOWN_ 0xD0
+
 class console {
 	public:
 	CONSOLE static int CONSOLECALL getImage();	
 	CONSOLE static void CONSOLECALL setCursorPosition(int x, int y);
 	CONSOLE static void CONSOLECALL setCursorLeft(int x);
 	CONSOLE static void CONSOLECALL setCursorTop(int y);
-	CONSOLE static void CONSOLECALL setConsoleColor(int color); //bitwise OR the colors FG and BG
+	CONSOLE static void CONSOLECALL setConsoleColor(int color);
 	CONSOLE static int CONSOLECALL getConsoleWidth();
 	CONSOLE static int CONSOLECALL getConsoleHeight();
 	CONSOLE static int CONSOLECALL readKey();
 	CONSOLE static int CONSOLECALL readKeyAsync();
 	CONSOLE static void CONSOLECALL clear();
 	CONSOLE static void CONSOLECALL write(int x, int y, char character);
-	CONSOLE static void CONSOLECALL write(int x, int y, char character, int color);
+	CONSOLE static void CONSOLECALL write(int x, int y, char character, char color);
 	CONSOLE static void CONSOLECALL write(char* fb, char* cb, int length);
+	CONSOLE static void CONSOLECALL write(wchar_t* fb, char* cb, int length);
 	CONSOLE static void CONSOLECALL write(int x, int y, std::string& str);
+	CONSOLE static void CONSOLECALL write(int x, int y, std::string& str, char color);
+	CONSOLE static void CONSOLECALL write(int x, int y, const char* str);
+	CONSOLE static void CONSOLECALL write(int x, int y, const char* str, char color);
 	CONSOLE static void CONSOLECALL sleep(int millis);
-	//CONSOLE static void invokeConstructor() {
-	//	console::cons::constructor();
-	//}
-	//CONSOLE static void invokeDestructor() {
-	//	console::cons::~constructor();
-	//}
+	
+	CONSOLE static bool ready;
+	
 	private:
 	friend class constructor;
 	
@@ -77,14 +92,17 @@ class console {
 		~constructor();
 	};
 	
-	static constructor cons;
+	static constructor cons;	
 	
 	private:
 	CONSOLE static int _activeColor;
 	#if defined __WIN32
+	public:
+	CONSOLE static void CONSOLECALL write(CHAR_INFO* fb, int length);
 	CONSOLE static HANDLE conHandle;
 	CONSOLE static HANDLE inHandle;
 	CONSOLE static HANDLE ogConHandle;
+	private:
 	CONSOLE static int CONSOLECALL _getCharInfoColor(int color);
 	public:
 	CONSOLE static void CONSOLECALL _construct() {		
@@ -92,18 +110,23 @@ class console {
 		console::conHandle = CreateConsoleScreenBuffer(0x80000000U | 0x40000000U, 0, 0, 0x00000001, 0);
 		console::_activeColor = BBLACK | FWHITE;
 	
+	#ifndef DEBUG
 		SetConsoleActiveScreenBuffer(conHandle);
 		SetConsoleActiveScreenBuffer(GetStdHandle(STD_INPUT_HANDLE));
+	#endif
 		
 		inHandle = GetStdHandle(STD_INPUT_HANDLE);
-		//SetConsoleMode(inHandle, ENABLE_EXTENDED_FLAGS | ENABLE_WINDOW_INPUT | ENABLE_MOUSE_INPUT);
 		SetConsoleMode(inHandle, ENABLE_WINDOW_INPUT);
+		
+		ready = true;
 	}
 	CONSOLE static void CONSOLECALL _destruct() {
 		SetConsoleActiveScreenBuffer(ogConHandle);
+		
+		ready = false;
 	}
 	private:
-	#elif defined __linux__
+	#elif defined __linux__	
 	static void _refreshSize();
 	static struct winsize w;
 	#endif

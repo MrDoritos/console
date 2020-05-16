@@ -35,7 +35,13 @@ class png {
 	
 	pixel* getSample(int x, int y, int sizex, int sizey) {
 		float scaleX = float(sizex) / float(_sizex), scaleY = float(sizey) / float(_sizey);
-		return getPixel((int)(x / scaleX), (int)(y / scaleY));
+		return getPixel((int)(float(x) / scaleX), (int)(float(y) / scaleY));
+	}
+	
+	inline char getChar(float val) {
+		const int size = 70;
+		const char scC[71] = { "$@B%8&WM#*oahkbdpqwmZO0QLCJUYXzcvunxrjft/\|()1{}[]?-_+~<>i!lI;:,\"^`'. " };
+		return scC[int(size * val)];
 	}
 	
 	int getSizeX() { return _sizex; }
