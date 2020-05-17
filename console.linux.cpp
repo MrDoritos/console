@@ -14,6 +14,7 @@ int console::_activeColor;
 bool console::ready;
 
 console::constructor::constructor() {	
+    setlocale(LC_ALL, "");
 	initscr();
 	start_color();
 	auto map_color = [](int i) {
