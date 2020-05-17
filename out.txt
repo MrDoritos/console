@@ -1,0 +1,12 @@
+console.linux.cpp:11:9: error: macro names must be identifiers
+ #define ░ ACS_CKBOARD
+         ^
+console.linux.cpp:12:9: error: macro names must be identifiers
+ #define ▓ ACS_CKBOARD
+         ^
+console.linux.cpp:13:9: error: macro names must be identifiers
+ #define ▒ ACS_CKBOARD
+         ^
+console.linux.cpp:14:9: error: macro names must be identifiers
+ #define █ ACS_CKBOARD
+         ^

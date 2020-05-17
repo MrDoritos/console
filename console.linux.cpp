@@ -7,12 +7,6 @@
 #include <sys/ioctl.h>
 #include <string>
 
-//Wish ncurses supported this better
-#define L'░' ACS_CKBOARD
-#define L'▓' ACS_CKBOARD
-#define L'▒' ACS_CKBOARD
-#define L'█' ACS_CKBOARD
-
 //Define constructor
 console::constructor console::cons;
 winsize console::w;
