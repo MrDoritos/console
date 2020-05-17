@@ -47,12 +47,13 @@ class adv {
 		modify = true;
 		drawingMode = 0;
 		doubleSize = false;
+		thread = true;
 		uiloop = std::thread(loop);
 	}
 	static void _advancedConsoleDestruct() {	
 		ready = false;
 		run = false;	
-		console::constructor::~constructor();
+		console::cons.~constructor();
 	}
 	
 	static void setDoubleWidth(bool w) {
@@ -71,6 +72,10 @@ class adv {
 			doubleSize = false;
 			clear();
 		}
+	}
+	
+	static void setThreadState(bool state) {
+		thread = state; //Just pauses/unpauses the drawing thread
 	}
 	
 	static bool allocate(int width, int height) {
@@ -119,7 +124,7 @@ class adv {
 				//if (!modify)
 				//	goto condition;
 				//console::write(fb, cb, width * height);
-				draw();
+				draw(true);
 				//modify = false;
 			}
 			
@@ -159,8 +164,8 @@ class adv {
 		#ifdef __linux__
 		console::useRefresh = false;
 		#endif
-		for (int x = 0; x < width; x++)
-			for (int y = 0; y < height; y++)
+		for (int x = 0; x < width; x++) {
+			for (int y = 0; y < height; y++) {
 				if (cb[get(x,y)] != oldcb[get(x,y)] || fb[get(x,y)] != oldfb[get(x,y)]) {
 					if (doubleSize) {
 						console::write(x * 2, y, fb[get(x,y)],cb[get(x,y)]);
@@ -168,14 +173,23 @@ class adv {
 					} else {
 						console::write(x,y,fb[get(x,y)],cb[get(x,y)]);
 					}
+					oldfb[get(x,y)] = fb[get(x,y)];
+					oldcb[get(x,y)] = cb[get(x,y)];
 				}
+			}
+		}
 		#ifdef __linux__
 		console::useRefresh = true;
 		refresh();
 		#endif
 	}
 	
-	static void draw() {
+	static void draw(bool callee = false) {
+		if (callee && !thread) {
+			console::sleep(1000);
+			return;
+		}
+		{
 		std::lock_guard<std::mutex> lk(buffers);
 		if (!modify)
 			return;
@@ -199,10 +213,10 @@ class adv {
 		}
 		
 		if (drawingMode == DRAWINGMODE_COMPARE)
-			//drawCompare();
-			error("");
+			drawCompare();
 		
 		modify = false;
+		}
 	}
 	
 	static void write(int x, int y, wchar_t character) {
@@ -548,6 +562,7 @@ class adv {
 	static bool run;
 	static bool ready;
 	static bool modify;
+	static bool thread;
 	
 	static int width;
 	static int height;
@@ -576,3 +591,4 @@ char* adv::cb;
 char* adv::oldcb;
 int adv::drawingMode;
 bool adv::doubleSize;
+bool adv::thread;
