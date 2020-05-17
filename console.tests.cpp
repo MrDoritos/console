@@ -22,17 +22,17 @@ int main() {
 	
 	int cwidth = console::getConsoleWidth(), cheight = console::getConsoleHeight();
 	
-	for (i = 0; i < 64; i++) {
+	for (i = 0; i < 128; i++) {
 		//fprintf(stderr, "[%i] fg: %i bg: %i", i + 1, i % 8, (((i) / 8) % 8));
 		console::write(i % cwidth, (i / cwidth) % cheight, '#', (i % 8) | ((((i) / 8) % 8) << 4));
 					 //x		   y							each fg   
 	}
 	
-	for (i = 0; i < 64; i++) {
+	for (i = 0; i < 128; i++) {
 		console::write(i % cwidth, ((i / cwidth) + 20) % cheight, '*', (i % 8) | (((i / 8) % 8) << 4));
 	}
 
-	for (i = 0; i < 8; i++) {
+	for (i = 0; i < 16; i++) {
 		console::write(i % cwidth, ((i / cwidth) + 30) % cheight, ' ', i << 4);
 	}
 	//sleep(-1);
