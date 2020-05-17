@@ -148,27 +148,32 @@ void console::write(wchar_t* fb, char* cb, int length) {
 	}
 }
 
+void console::write(int x, int y, wchar_t character) {
+	mvaddch(y, x, character);	
+	refresh();
+}
+
+void console::write(int x, int y, wchar_t character, char color) {
+	console::setConsoleColor(color);
+	console::write(x, y, character);
+}
+
 void console::write(int x, int y, char character) {
-	mvaddch(y, x, character);
-	
-	//Call refresh ?
+	mvaddch(y, x, character);	
 	refresh();
 }
-
-/*
-void console::write(int x, int y, std::string& str) {
-	for (int i = 0; i < str.length(); i++) {
-		mvaddch(y, x, str[i]);
-	}
-
-	refresh();
-}
-*/
 
 void console::write(int x, int y, char character, char color) {
 	console::setConsoleColor(color);
 	console::write(x, y, character);
 }
+
+
+
+
+
+
+
 
 
 

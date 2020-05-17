@@ -1,7 +1,7 @@
 //Win32
 #include <iostream>
 #include <Windows.h>
-#include <console.h>
+#include "console.h"
 #include <conio.h>
 #include <stdio.h>
 
@@ -21,12 +21,29 @@ HANDLE console::ogConHandle;
 int console::_activeColor;
 bool console::ready;
 
-console::constructor::constructor() {
-	console::_construct();
+console::constructor::constructor() {	
+    setlocale(LC_ALL, "");
+	console::ogConHandle = GetStdHandle(STD_OUTPUT_HANDLE);
+	console::conHandle = CreateConsoleScreenBuffer(0x80000000U | 0x40000000U, 0, 0, 0x00000001, 0);
+	console::_activeColor = BBLACK | FWHITE;
+	
+	#ifndef DEBUG
+	{
+		SetConsoleActiveScreenBuffer(conHandle);
+		SetConsoleActiveScreenBuffer(GetStdHandle(STD_INPUT_HANDLE));
+	}
+	#endif
+		
+	inHandle = GetStdHandle(STD_INPUT_HANDLE);
+	SetConsoleMode(inHandle, ENABLE_WINDOW_INPUT);
+	
+	ready = true;
 }
 
 console::constructor::~constructor() {
-	console::_destruct();
+	SetConsoleActiveScreenBuffer(ogConHandle);
+		
+	ready = false;
 }
 
 void console::sleep(int millis) {
@@ -100,24 +117,16 @@ void console::clear() {
 	SetConsoleCursorPosition(console::conHandle, topLeft);
 }
 
-void console::write(int x, int y, char character) {
-	//console::write(x, y, character, console::_activeColor);
-	console::setCursorPosition(x, y);
-	DWORD written;
-	WriteConsole(console::conHandle, (const char*)&character, 1, &written, NULL);
-}
-
 void console::setConsoleColor(int color) {
-	//fprintf(stderr, "Setting color %i->%i", console::_activeColor, color);
 	if (console::_activeColor == _getCharInfoColor(color)) {
 		return;
 	}
-	console::_activeColor = color;
+	console::_activeColor = _getCharInfoColor(color);
 	SetConsoleTextAttribute(console::conHandle, console::_getCharInfoColor(color));
 }
 
 //Cyan and yellow are flipped with windows
-int console::_getCharInfoColor(int color) {
+int console::_getCharInfoColor(int color) {	
 	if ((color & FWHITE) == FCYAN)
 		color = (color & ~FWHITE) | FYELLOW;
 	else
@@ -210,37 +219,29 @@ void console::write(CHAR_INFO* fb, int length) {
 	WriteConsoleOutput(console::conHandle, fb, csbi.dwSize, {0,0}, &srwin);	
 }
 
-__declspec(dllexport) void CONSOLECALL console::write(int x, int y, char character, char color) {		
-	//SetConsoleTextAttribute(console::conHandle, console::_getCharInfoColor(color));
+void console::write(int x, int y, char character, char color) {
 	console::setConsoleColor(color);
 	console::write(x, y, character);
-	//SetConsoleTextAttribute(console::conHandle, console::_getCharInfoColor(console::_activeColor));
-	//CHAR_INFO charInfo;
-	//charInfo.Char.AsciiChar = character;
-	/*
-	FG
-	0x0001 == 0b0000001
-	0x0002 == 0b0000010
-	0x0004 == 0b0000100
+}
 
-	BG
-	0x0010 == 0b0010000
-	0x0020 == 0b0100000
-	0b0040 == 0b1000000
-	*/
-	
-	//charInfo.Attributes = console::_getCharInfoColor(color);
-	
-	//CONSOLE_SCREEN_BUFFER_INFO csbi;
-	//GetConsoleScreenBufferInfo(console::conHandle, &csbi);
-	
-	//SMALL_RECT srwin = { 0, 0, csbi.dwSize.X - 1, csbi.dwSize.Y - 1 };
-	//WriteConsoleOutput(console::conHandle, (CHAR_INFO*)&charInfo, csbi.dwSize, {x, y}, &srwin);
+void console::write(int x, int y, char character) {
+	console::setCursorPosition(x, y);
+	DWORD written;
+	WriteConsole(console::conHandle, (const char*)&character, 1, &written, NULL);
+}
+
+void console::write(int x, int y, wchar_t character, char color) {
+	console::setConsoleColor(color);
+	console::write(x, y, character);
+}
+
+void console::write(int x, int y, wchar_t character) {
+	console::setCursorPosition(x, y);
+	DWORD written;
+	WriteConsole(console::conHandle, (const wchar_t*)&character, 1, &written, NULL);
 }
 
 void console::setCursorPosition(int x, int y) {
-	//CONSOLE_SCREEN_BUFFER_INFO csbi;
-	//GetConsoleScreenBufferInfo(console::conHandle, &csbi);
 	SetConsoleCursorPosition(console::conHandle, { short(x), short(y) });
 }
 

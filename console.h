@@ -76,12 +76,13 @@ class console {
 	CONSOLE static void CONSOLECALL write(int x, int y, char character, char color);
 	CONSOLE static void CONSOLECALL write(char* fb, char* cb, int length);
 	CONSOLE static void CONSOLECALL write(wchar_t* fb, char* cb, int length);
+	CONSOLE static void CONSOLECALL write(int x, int y, wchar_t character);
+	CONSOLE static void CONSOLECALL write(int x, int y, wchar_t character, char color);
 	CONSOLE static void CONSOLECALL write(int x, int y, std::string& str);
 	CONSOLE static void CONSOLECALL write(int x, int y, std::string& str, char color);
 	CONSOLE static void CONSOLECALL write(int x, int y, const char* str);
 	CONSOLE static void CONSOLECALL write(int x, int y, const char* str, char color);
 	CONSOLE static void CONSOLECALL sleep(int millis);
-	
 	CONSOLE static bool ready;
 	
 	private:
@@ -104,28 +105,6 @@ class console {
 	CONSOLE static HANDLE ogConHandle;
 	private:
 	CONSOLE static int CONSOLECALL _getCharInfoColor(int color);
-	public:
-	CONSOLE static void CONSOLECALL _construct() {		
-		console::ogConHandle = GetStdHandle(STD_OUTPUT_HANDLE);
-		console::conHandle = CreateConsoleScreenBuffer(0x80000000U | 0x40000000U, 0, 0, 0x00000001, 0);
-		console::_activeColor = BBLACK | FWHITE;
-	
-	#ifndef DEBUG
-		SetConsoleActiveScreenBuffer(conHandle);
-		SetConsoleActiveScreenBuffer(GetStdHandle(STD_INPUT_HANDLE));
-	#endif
-		
-		inHandle = GetStdHandle(STD_INPUT_HANDLE);
-		SetConsoleMode(inHandle, ENABLE_WINDOW_INPUT);
-		
-		ready = true;
-	}
-	CONSOLE static void CONSOLECALL _destruct() {
-		SetConsoleActiveScreenBuffer(ogConHandle);
-		
-		ready = false;
-	}
-	private:
 	#elif defined __linux__	
 	static void _refreshSize();
 	static struct winsize w;
