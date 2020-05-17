@@ -8,6 +8,14 @@
 
 #include <string.h>
 
+#ifdef __linux__
+#include <curses.h>
+#endif
+
+#define DRAWINGMODE_BASIC 0
+#define DRAWINGMODE_COMPARE 1
+#define DRAWINGMODE_AUTO 2
+#define DRAWINGMODE_COMPLEX 3
 
 class adv {
 	public:
@@ -37,19 +45,58 @@ class adv {
 		run = true;
 		ready = false;
 		modify = true;
+		drawingMode = 0;
+		doubleSize = false;
 		uiloop = std::thread(loop);
 	}
 	static void _advancedConsoleDestruct() {	
 		ready = false;
 		run = false;	
+		console::constructor::~constructor();
+	}
+	
+	static void setDoubleWidth(bool w) {
+		if (w) {
+			width = floor(console::getConsoleWidth() / 2.0f);
+			height = console::getConsoleHeight();
+			if (!allocate(width, height)) {
+				error("Could not allocate new buffers for double width mode");
+			}
+			doubleSize = true;
+			clear();
+		} else {
+			if (!allocate()) {
+				error("Could not allocate new buffers for single width mode");
+			}
+			doubleSize = false;
+			clear();
+		}
+	}
+	
+	static bool allocate(int width, int height) {
+		fb = new wchar_t[width * height];
+		cb = new char[width * height];
+		if (drawingMode == DRAWINGMODE_COMPARE) {
+			oldfb = new wchar_t[width * height];
+			oldcb = new char[width * height];
+			if (!oldfb || !oldcb)
+				return false;
+		}
+		if (!fb || !cb)
+			return false;
+		clear();
+		return true;
 	}
 	
 	static bool allocate() {
 		width = console::getConsoleWidth(), height = console::getConsoleHeight();
+		return allocate(width, height);
+		/*
 		fb = new wchar_t[width * height];
 		cb = new char[width * height];
 		clear();
 		return (fb != nullptr && cb != nullptr);
+		*/
 	}
 		
 	static void loop() {		
@@ -68,14 +115,15 @@ class adv {
 			
 			//Operate on the buffers
 			{
-				std::lock_guard<std::mutex> lk(buffers); //obtain lock on the buffers
-				if (!modify)
-					goto condition;
-				console::write(fb, cb, width * height);
-				modify = false;
+				//std::lock_guard<std::mutex> lk(buffers); //obtain lock on the buffers
+				//if (!modify)
+				//	goto condition;
+				//console::write(fb, cb, width * height);
+				draw();
+				//modify = false;
 			}
 			
-			condition:;
+			//condition:;
 			
 			while (!modify)
 				//console::sleep(33); //~30 fps
@@ -83,6 +131,78 @@ class adv {
 				//std::this_thread::yield();
 				//console::sleep(1);
 		}
+	}
+	
+	static void setDrawingMode(int mode) {
+		std::lock_guard<std::mutex> lk(buffers);
+		switch (mode) {
+			case DRAWINGMODE_BASIC: {
+				drawingMode = DRAWINGMODE_BASIC;
+				break;
+				}
+			case DRAWINGMODE_COMPARE: {
+				oldfb = new wchar_t[width * height];
+				oldcb = new char[width * height];
+				if (!oldfb || !oldcb)
+					error("Could not allocate a buffer for DRAWINGMODE_COMPARE");
+				drawingMode = DRAWINGMODE_COMPARE;
+				break;
+				}
+			default: {
+				break;
+				}
+		}
+	}
+	
+	static void drawCompare() {
+		//Since we refresh on every console::write I think we should have an automatic switch for linux
+		#ifdef __linux__
+		console::useRefresh = false;
+		#endif
+		for (int x = 0; x < width; x++)
+			for (int y = 0; y < height; y++)
+				if (cb[get(x,y)] != oldcb[get(x,y)] || fb[get(x,y)] != oldfb[get(x,y)]) {
+					if (doubleSize) {
+						console::write(x * 2, y, fb[get(x,y)],cb[get(x,y)]);
+						console::write(x * 2 + 1, y, fb[get(x,y)],cb[get(x,y)]);
+					} else {
+						console::write(x,y,fb[get(x,y)],cb[get(x,y)]);
+					}
+				}
+		#ifdef __linux__
+		console::useRefresh = true;
+		refresh();
+		#endif
+	}
+	
+	static void draw() {
+		std::lock_guard<std::mutex> lk(buffers);
+		if (!modify)
+			return;
+		
+		if (drawingMode == DRAWINGMODE_BASIC) {
+			if (doubleSize) {
+				wchar_t buffer[(width * 2) * height];
+				char cbuffer[(width * 2) * height];
+				for (int x = 0; x < width; x++) {
+					for (int y = 0; y < height; y++) {
+						 buffer[(y * width * 2) + (x * 2)]     = fb[get(x,y)];
+						 buffer[(y * width * 2) + (x * 2 + 1)] = fb[get(x,y)];
+						cbuffer[(y * width * 2) + (x * 2)]     = cb[get(x,y)];
+						cbuffer[(y * width * 2) + (x * 2 + 1)] = cb[get(x,y)];
+					}
+				}
+				console::write(&buffer[0], &cbuffer[0], (width * 2) * height);
+			} else {
+				console::write(fb, cb, width * height);
+			}
+		}
+		
+		if (drawingMode == DRAWINGMODE_COMPARE)
+			//drawCompare();
+			error("");
+		
+		modify = false;
 	}
 	
 	static void write(int x, int y, wchar_t character) {
@@ -137,11 +257,6 @@ class adv {
 		}
 		//memset(cb, color, width * height * sizeof(char));
 		modify = true;
-	}
-	
-	static void draw() {
-		std::lock_guard<std::mutex> lk(buffers);
-		console::write(fb, cb, width * height);
 	}
 	
 	/* Drawing functions */
@@ -438,8 +553,13 @@ class adv {
 	static int height;
 	
 	static wchar_t* fb;
+	static wchar_t* oldfb;
 	static char* cb;
+	static char* oldcb;
 	
+	private:
+	static int drawingMode;
+	static bool doubleSize;
 };
 
 adv::_constructor adv::construct;
@@ -451,4 +571,8 @@ bool adv::modify;
 int adv::width;
 int adv::height;
 wchar_t* adv::fb;
+wchar_t* adv::oldfb;
 char* adv::cb;
+char* adv::oldcb;
+int adv::drawingMode;
+bool adv::doubleSize;

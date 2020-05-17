@@ -85,7 +85,7 @@ class console {
 	CONSOLE static void CONSOLECALL sleep(int millis);
 	CONSOLE static bool ready;
 	
-	private:
+	public:
 	friend class constructor;
 	
 	struct constructor {
@@ -108,6 +108,8 @@ class console {
 	#elif defined __linux__	
 	static void _refreshSize();
 	static struct winsize w;
+	public:
+	static bool useRefresh;
 	#endif
 };
 

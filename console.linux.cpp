@@ -12,9 +12,11 @@ console::constructor console::cons;
 winsize console::w;
 int console::_activeColor;
 bool console::ready;
+bool console::useRefresh;
 
 console::constructor::constructor() {	
-    setlocale(LC_ALL, "");
+	useRefresh = true;
+	setlocale(LC_ALL, "");
 	initscr();
 	start_color();
 	auto map_color = [](int i) {
@@ -109,7 +111,8 @@ void console::write(int x, int y, std::string& str) {
 	for (int i = 0; i < str.length() && i + x < w; i++) {
 		mvaddch(y, x + i, str[i]);
 	}
-	refresh();
+	if (useRefresh)
+		refresh();
 }
 
 void console::write(int x, int y, std::string& str, char c) {
@@ -121,7 +124,8 @@ void console::write(int x, int y, std::string& str, char c) {
 		setConsoleColor(c);
 		mvaddch(y, x + i, str[i]);
 	}
-	refresh();
+	if (useRefresh)
+		refresh();
 }
 
 void console::write(char* fb, char* cb, int length) {
@@ -134,7 +138,8 @@ void console::write(char* fb, char* cb, int length) {
 			mvaddch(y, x, fb[i++]);
 		}
 	}
-	refresh();
+	if (useRefresh)
+		refresh();
 }
 
 void console::write(wchar_t* fb, char* cb, int length) {
@@ -147,6 +152,8 @@ void console::write(wchar_t* fb, char* cb, int length) {
 			mvaddch(y, x, fb[i++]);
 		}
 	}
+	if (useRefresh)
+		refresh();
 }
 
 void console::write(int x, int y, wchar_t character) {
