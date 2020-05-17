@@ -32,6 +32,8 @@ console::constructor::constructor() {
 	
 	cbreak();
 	noecho();
+	keypad(stdscr, true);
+	raw();
 	console::_activeColor = -1;
 	ready = true;
 }
