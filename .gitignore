@@ -1,4 +1,4 @@
 *.exe
 *.gcf
-./c port/
-./New folder/
+c port/
+New folder/
