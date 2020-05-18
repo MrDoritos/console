@@ -48,11 +48,17 @@ extern "C" {
 #define IMAGE_LINUX IMAGE_POSIX
 
 #ifndef __WIN32
-#define VK_ESCAPE 0x1B
-#define VK_ENTER 0x0D
-#define VK_DELETE 0x2E
-#define VK_CONTROL 0x11
-#define VK_SHIFT 0x10
+#define VK_ESCAPE KEY_ESCAPE
+#define VK_ENTER KEY_ENTER
+#define VK_DELETE KEY_DELETE
+
+#define VK_LEFT KEY_LEFT
+#define VK_RIGHT KEY_RIGHT
+#define VK_UP KEY_UP
+#define VK_DOWN KEY_DOWN
+
+//#define VK_CONTROL KEY_CONTROL
+//#define VK_SHIFT KEY_SHIFT
 #endif
 
 #define VK_LEFT_ 0xCB
