@@ -280,6 +280,9 @@ class adv {
 	}
 		
 	static void line(int x1, int y1, int x2, int y2, wchar_t character, char color) {		
+		if (!bound(x1, y1) ||
+			!bound(x2, y2))
+			return;
 		std::lock_guard<std::mutex> lk(buffers);
 		int x,y,dx,dy,dx1,dy1,px,py,xe,ye,i;
 		
@@ -369,7 +372,11 @@ class adv {
 		modify = true;
 	}
 	
-	static void triangle(int x0, int y0, int x1, int y1, int x2, int y2, wchar_t character, char color) {		
+	static void triangle(int x0, int y0, int x1, int y1, int x2, int y2, wchar_t character, char color) {
+		if (!bound(x0, y0) ||
+			!bound(x1, y1) ||
+			!bound(x2, y2))
+			return;
 		std::lock_guard<std::mutex> lk(buffers);
 		
 		if (y0 > y1) {
@@ -400,7 +407,7 @@ class adv {
 			
 			if (Ax>Bx) { std::swap(Ax, Bx); std::swap(Ay, By); }
 			
-			for (int j=Ax; j<=Bx; j++) { 
+			for (unsigned int j=Ax; j<=Bx; j++) { 
 				//image.set(j, y, color); // attention, due to int casts t0.y+i != A.y 
 				if (bound(j, y)) {
 					fb[get(j, y)] = character;
@@ -409,7 +416,7 @@ class adv {
 			} 			
 		}
 				
-		for (int y=y1; y<=y2; y++) { 
+		for (unsigned int y=y1; y<=y2; y++) { 
 			int segment_height =  y2-y1+1; 
 			float alpha = (float)(y-y0)/total_height; 
 			float beta  = (float)(y-y1)/segment_height; // be careful with divisions by zero 			
@@ -420,7 +427,7 @@ class adv {
 			
 			if (Ax>Bx) { std::swap(Ax, Bx); std::swap(Ay, By); }
 						
-			for (int j=Ax; j<=Bx; j++) { 
+			for (unsigned int j=Ax; j<=Bx; j++) { 
 				if (bound(j, y)) {
 					fb[get(j, y)] = character;
 					cb[get(j, y)] = color;
