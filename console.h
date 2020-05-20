@@ -49,7 +49,7 @@ extern "C" {
 
 #ifndef __WIN32
 #define VK_ESCAPE KEY_ESCAPE
-#define VK_ENTER KEY_ENTER
+#define VK_RETURN KEY_ENTER
 #define VK_DELETE KEY_DELETE
 
 #define VK_LEFT KEY_LEFT
@@ -61,11 +61,8 @@ extern "C" {
 //#define VK_SHIFT KEY_SHIFT
 #endif
 
-#define VK_LEFT_ 0xCB
-#define VK_UP_ 0xC8
-#define VK_RIGHT_ 0xCD
-#define VK_DOWN_ 0xD0
-
+#define VK_ENTER VK_RETURN
+#define VK_BACKSPACE 8
 class console {
 	public:
 	CONSOLE static int CONSOLECALL getImage();	

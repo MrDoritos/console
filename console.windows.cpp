@@ -166,22 +166,15 @@ int console::readKey() {
 	while (true) {
 		ReadConsoleInput(console::inHandle, &irec, 1, &n);
 		if (irec.EventType == KEY_EVENT && ((KEY_EVENT_RECORD&)irec.Event).bKeyDown) {
+			char asciiChar;
 			krec = (KEY_EVENT_RECORD&)irec.Event;
-			return krec.uChar.AsciiChar;
+			asciiChar = krec.uChar.AsciiChar;
+			if (asciiChar < 128 && asciiChar > 31)
+				return asciiChar;
+			
+			return irec.Event.KeyEvent.wVirtualKeyCode;
 		}
 	}
-	/*
-	for (int i = 0; i < n; i++) {
-		switch (irec.EventType) {
-			case KEY_EVENT: 
-			{
-				if (irec.Event.KeyEvent.bKeyDown)
-				return irec.Event.KeyEvent.uChar.AsciiChar;
-			}
-			break;
-		}
-	}
-	*/
 	return -1;
 }
 

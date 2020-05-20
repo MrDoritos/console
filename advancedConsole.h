@@ -238,6 +238,18 @@ class adv {
 		adv::write(x, y, string, FWHITE | BBLACK);
 	}
 	
+	//Normal write
+	static void norm(float posx, float posy, const char* string, char color) {
+		int l = strlen(string);
+		int ox = adv::getOffsetX(posx, l);
+		int oy = adv::getOffsetY(posy, 1);
+		adv::write(ox, oy, string, color);
+	}
+	
+	static void norm(float posx, float posy, const char* string) {
+		norm(posx, posy, string, FWHITE | BBLACK);
+	}
+	
 	static void write(int x, int y, const char* string, char color) {
 		std::lock_guard<std::mutex> lk(buffers);
 		int length = strlen(string);
@@ -245,9 +257,9 @@ class adv {
 			if (bound(x + i, y)) {
 				fb[get(x + i, y)] = string[i];
 				cb[get(x + i, y)] = color;
-				modify = true;
 			}
 		}
+		modify = true;
 	}
 	
 	static void write(int x, int y, wchar_t character, char color) {
@@ -274,6 +286,47 @@ class adv {
 	}
 	
 	/* Drawing functions */
+	
+	static void rectangle(int x0, int y0, int x1, int y1) {
+		rectangle(x0, y0, x1, y1, L'#', FWHITE|BBLACK);
+	}
+	
+	static void rectangle(int x0, int y0, int x1, int y1, wchar_t character, char color) {
+		line(x0,y0,x1,y0,character,color);
+		line(x1,y0,x1,y1,character,color);
+		line(x0,y1,x1,y1,character,color);
+		line(x0,y0,x0,y1,character,color);
+	}
+	
+	static void border(int x0, int y0, int x1, int y1, char color) {
+		line(x0,y0,x1,y0,'-', color);
+		line(x1,y0,x1,y1,'|', color);
+		line(x0,y1,x1,y1,'-', color);
+		line(x0,y0,x0,y1,'|', color);
+		write(x0,y0,'+', color);
+		write(x1,y0,'+', color);
+		write(x0,y1,'+', color);
+		write(x1,y1,'+', color);
+	}
+	
+	static void fill(int x0, int y0, int x1, int y1) {
+		fill(x0, y0, x1, y1, L'#', FWHITE|BBLACK);
+	}
+	
+	static void fill(int x0, int y0, int x1, int y1, wchar_t character, char color) {
+		std::lock_guard<std::mutex> lk(buffers);
+		for (int x = x0; x < x1; x++) {
+			for (int y = x0; y < y1; y++) {
+				if (!bound(x,y))
+					continue;
+				
+				fb[get(x,y)] = character;
+				cb[get(x,y)] = color;
+			}
+		}
+		
+		modify = true;
+	}
 	
 	static void line(int x0, int y0, int x1, int y1) {
 		line(x0,y0,x1,y1,'#',FWHITE|BBLACK);
@@ -547,6 +600,10 @@ class adv {
 		return (float(width) * scale) - (length / 2);
 	}
 	
+	static int getOffsetX(float scale) {
+		return getOffsetX(scale, 0);
+	}
+	
 	static int getOffsetY(float scale, float length) {
 		if (length < 1) {
 			return (float(height) * scale);
@@ -555,6 +612,10 @@ class adv {
 			return 0.0f;
 		
 		return (float(height) * scale) - (length / 2);
+	}
+	
+	static int getOffsetY(float scale) {
+		return getOffsetX(scale, 0);
 	}
 	
 	struct key {
