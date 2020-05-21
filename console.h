@@ -49,7 +49,7 @@ extern "C" {
 
 #ifndef __WIN32
 #define VK_ESCAPE 27
-#define VK_RETURN KEY_ENTER
+#define VK_RETURN '\n' //On windows this would be the carriage return instead
 #define VK_DELETE KEY_DELETE
 
 #define VK_LEFT KEY_LEFT
