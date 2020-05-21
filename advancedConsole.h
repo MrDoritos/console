@@ -17,6 +17,9 @@
 #define DRAWINGMODE_AUTO 2
 #define DRAWINGMODE_COMPLEX 3
 
+//Disable curses garbage
+#undef border
+
 class adv {
 	public:
 	friend class _constructor;
