@@ -48,7 +48,7 @@ extern "C" {
 #define IMAGE_LINUX IMAGE_POSIX
 
 #ifndef __WIN32
-#define VK_ESCAPE KEY_ESCAPE
+#define VK_ESCAPE 27
 #define VK_RETURN KEY_ENTER
 #define VK_DELETE KEY_DELETE
 
