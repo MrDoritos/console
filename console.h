@@ -57,12 +57,17 @@ extern "C" {
 #define VK_UP KEY_UP
 #define VK_DOWN KEY_DOWN
 
-//#define VK_CONTROL KEY_CONTROL
-//#define VK_SHIFT KEY_SHIFT
+#define VK_BACKSPACE 263 //Holy fuck ncurses is such a shit library. Truely proprietary shit tier
+	//KEY_BACKSPACE
+	//238
+	//127
+	//'\b'
+#elif defined __WIN32
+#define VK_BACKSPACE VK_BACK
 #endif
 
 #define VK_ENTER VK_RETURN
-#define VK_BACKSPACE 8
+
 class console {
 	public:
 	CONSOLE static int CONSOLECALL getImage();	

@@ -336,9 +336,9 @@ class adv {
 	}
 		
 	static void line(int x1, int y1, int x2, int y2, wchar_t character, char color) {		
-		if (!bound(x1, y1) ||
-			!bound(x2, y2))
-			return;
+		//if (!bound(x1, y1) ||
+		//	!bound(x2, y2))
+		//	return;
 		std::lock_guard<std::mutex> lk(buffers);
 		int x,y,dx,dy,dx1,dy1,px,py,xe,ye,i;
 		

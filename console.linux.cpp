@@ -6,6 +6,7 @@
 #include <console.h>
 #include <sys/ioctl.h>
 #include <string>
+#include <string.h>
 
 //Define constructor
 console::constructor console::cons;
@@ -49,7 +50,10 @@ int console::getImage() {
 
 int console::readKey() {
 	timeout(-1);
+//	wint_t c;
+//	get_wch(&c);
 	return getch();
+//	return c;
 }
 
 int console::readKeyAsync() {
@@ -113,6 +117,25 @@ void console::write(int x, int y, std::string& str) {
 	for (int i = 0; i < str.length() && i + x < w; i++) {
 		mvaddch(y, x + i, str[i]);
 	}
+	if (useRefresh)
+		refresh();
+}
+
+void console::write(int x, int y, const char* str) {
+	console::write(x, y, str, _activeColor);
+}
+
+void console::write(int x, int y, const char* str, char c) {
+	int w = console::getConsoleWidth();
+	int h = console::getConsoleHeight();
+	int l = strlen(str);
+	if (y >= h || x >= w)
+		return;
+	for (int i = 0; i < l && i + x < w; i++) {
+		setConsoleColor(c);
+		mvaddch(y, x + i, str[i]);
+	}
+
 	if (useRefresh)
 		refresh();
 }
