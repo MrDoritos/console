@@ -1,8 +1,13 @@
 #pragma once
+
+#ifndef __ADVANCEDCONSOLE
+#define __ADVANCEDCONSOLE
+
 #include "console.h"
 
 #include <thread>
 #include <mutex>
+#include <condition_variable>
 #include <cmath>
 #include <algorithm>
 
@@ -25,24 +30,13 @@ class adv {
 	friend class _constructor;
 	
 	struct _constructor {
-		_constructor() {
-			_advancedConsoleConstruct();
-		}
-		~_constructor() {
-			_advancedConsoleDestruct();
-		}
+		_constructor();
+		~_constructor();
 	};
 	
 	static _constructor construct;
 	
-	static void error(char* err) {
-		//console::_destruct();
-		_advancedConsoleDestruct();
-		while (console::ready) 
-			console::sleep(50); //wait for destruct
-		printf("Error: %s\r\n", err);
-		exit(1);
-	}
+	static void error(char* err);
 	
 	static void _advancedConsoleConstruct() {
 		run = true;
@@ -108,6 +102,9 @@ class adv {
 	}
 		
 	static void loop() {		
+		{
+		std::lock_guard<std::mutex> lk(startLock);
+		
 		while (!console::ready) 
 			console::sleep(50);
 		
@@ -117,6 +114,8 @@ class adv {
 		int c;
 		
 		ready = true;
+		}
+		cvStart.notify_all();
 		
 		while (run) {
 			//Other threads can read keys, not this one
@@ -151,7 +150,7 @@ class adv {
 			case DRAWINGMODE_COMPARE: {
 				oldfb = new wchar_t[width * height];
 				oldcb = new char[width * height];
-				if (!oldfb || !oldcb)
+				if (!oldfb || !oldcb || !cb || !fb)
 					error("Could not allocate a buffer for DRAWINGMODE_COMPARE");
 				drawingMode = DRAWINGMODE_COMPARE;
 				break;
@@ -220,6 +219,17 @@ class adv {
 		
 		modify = false;
 		}
+	}
+	
+	static void write(wchar_t* framebuffer, char* colorbuffer, int width, int height) {
+		std::lock_guard<std::mutex> lk(buffers);
+		for (int x = 0; x < width && x < adv::width; x++) {
+			for (int y = 0; y < height && y < adv::height; y++) {
+				fb[get(x,y)] = framebuffer[y * width + x];
+				cb[get(x,y)] = colorbuffer[y * width + x];
+			}			
+		}
+		modify = true;
 	}
 	
 	static void write(int x, int y, wchar_t character) {
@@ -620,14 +630,10 @@ class adv {
 	static int getOffsetY(float scale) {
 		return getOffsetX(scale, 0);
 	}
-	
-	struct key {
-		bool pressed;
-		bool released;
-		bool held;		
-	} keys[256];
-	
+		
 	static std::mutex buffers;
+	static std::condition_variable cvStart;
+	static std::mutex startLock;
 	
 	static std::thread uiloop;
 	static bool run;
@@ -648,18 +654,4 @@ class adv {
 	static bool doubleSize;
 };
 
-adv::_constructor adv::construct;
-std::thread adv::uiloop;
-std::mutex adv::buffers;
-bool adv::run;
-bool adv::ready;
-bool adv::modify;
-int adv::width;
-int adv::height;
-wchar_t* adv::fb;
-wchar_t* adv::oldfb;
-char* adv::cb;
-char* adv::oldcb;
-int adv::drawingMode;
-bool adv::doubleSize;
-bool adv::thread;
+#endif
