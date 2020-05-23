@@ -329,7 +329,7 @@ class adv {
 	static void fill(int x0, int y0, int x1, int y1, wchar_t character, char color) {
 		std::lock_guard<std::mutex> lk(buffers);
 		for (int x = x0; x < x1; x++) {
-			for (int y = x0; y < y1; y++) {
+			for (int y = y0; y < y1; y++) {
 				if (!bound(x,y))
 					continue;
 				
