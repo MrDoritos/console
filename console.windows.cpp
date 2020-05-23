@@ -150,10 +150,16 @@ int console::readKeyAsync() {
 	GetNumberOfConsoleInputEvents(console::inHandle, &c);
 	if (c > 0) {
 		ReadConsoleInput(console::inHandle, &irec, 1, &n);
-		if (irec.EventType == KEY_EVENT && ((KEY_EVENT_RECORD&)irec.Event).bKeyDown)
-			return irec.Event.KeyEvent.uChar.AsciiChar;
-		else
-			return 0;
+		if (irec.EventType == KEY_EVENT && ((KEY_EVENT_RECORD&)irec.Event).bKeyDown) {
+			char asciiChar;
+			char modifiers = irec.Event.KeyEvent.dwControlKeyState;
+			krec = (KEY_EVENT_RECORD&)irec.Event;
+			asciiChar = krec.uChar.AsciiChar;
+			if (asciiChar < 128 && asciiChar > 31)
+				return asciiChar | (modifiers << 24);
+			
+			return irec.Event.KeyEvent.wVirtualKeyCode | (modifiers << 24);
+		}
 	} else {
 		return 0;
 	}
@@ -166,16 +172,17 @@ int console::readKey() {
 	while (true) {
 		ReadConsoleInput(console::inHandle, &irec, 1, &n);
 		if (irec.EventType == KEY_EVENT && ((KEY_EVENT_RECORD&)irec.Event).bKeyDown) {
-			char asciiChar;
+			int asciiChar;
+			char modifiers = irec.Event.KeyEvent.dwControlKeyState;
 			krec = (KEY_EVENT_RECORD&)irec.Event;
 			asciiChar = krec.uChar.AsciiChar;
 			if (asciiChar < 128 && asciiChar > 31)
-				return asciiChar;
+				return asciiChar | (modifiers << 24);
 			
-			return irec.Event.KeyEvent.wVirtualKeyCode;
+			return irec.Event.KeyEvent.wVirtualKeyCode | (modifiers << 24);
 		}
 	}
-	return -1;
+	return 0;
 }
 
 void console::write(char* fb, char* cb, int length) {

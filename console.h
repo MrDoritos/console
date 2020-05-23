@@ -68,6 +68,12 @@ extern "C" {
 
 #define VK_ENTER VK_RETURN
 
+#define __CTRL (0x08 << 24)
+#define __NMLK (0x20 << 24)
+#define NOMOD(x) (x & 0x00FFFFFF)
+#define HASMOD(x, mod) (x & mod == mod)
+#define HASKEY(x, key) (NOMOD(x) == key)
+
 class console {
 	public:
 	CONSOLE static int CONSOLECALL getImage();	
