@@ -49,7 +49,8 @@ class adv {
 	}
 	static void _advancedConsoleDestruct() {	
 		ready = false;
-		run = false;	
+		run = false;
+		setThreadState(true); //In case thread is waiting
 		console::cons.~constructor();
 	}
 	
@@ -72,7 +73,9 @@ class adv {
 	}
 	
 	static void setThreadState(bool state) {
+		//std::lock_guard<std::mutex> lk(threadStateMux);
 		thread = state; //Just pauses/unpauses the drawing thread
+		cvThreadState.notify_all();
 	}
 	
 	static bool allocate(int width, int height) {
@@ -126,17 +129,27 @@ class adv {
 				//if (!modify)
 				//	goto condition;
 				//console::write(fb, cb, width * height);
-				draw(true);
+				draw();
 				//modify = false;
 			}
 			
 			//condition:;
+			waitForThreadState();
 			
 			while (!modify)
 				//console::sleep(33); //~30 fps
 				console::sleep(16);
 				//std::this_thread::yield();
 				//console::sleep(1);
+		}
+	}
+	
+	static void waitForThreadState() {
+		if (thread)
+			return; //No wait
+		while (!thread) { //Wait for the drawing thread to be started again
+			std::unique_lock<std::mutex> lk(threadStateMux);
+			cvThreadState.wait(lk);
 		}
 	}
 	
@@ -186,11 +199,7 @@ class adv {
 		#endif
 	}
 	
-	static void draw(bool callee = false) {
-		if (callee && !thread) {
-			console::sleep(1000);
-			return;
-		}
+	static void draw() {
 		{
 		std::lock_guard<std::mutex> lk(buffers);
 		if (!modify)
@@ -633,7 +642,9 @@ class adv {
 		
 	static std::mutex buffers;
 	static std::condition_variable cvStart;
+	static std::condition_variable cvThreadState;
 	static std::mutex startLock;
+	static std::mutex threadStateMux;
 	
 	static std::thread uiloop;
 	static bool run;

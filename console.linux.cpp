@@ -31,10 +31,17 @@ console::constructor::constructor() {
 		init_pair(i + 1, map_color(i % 8), map_color((i / 8) % 8));
 	}
 	
+	//nocbreak(); //Disable ESC sequence checking. Might use timeout(0) exclusively for input
+	//nocbreak and raw used simultaniously
+	//otherwise use cbreak exclusively
+	
+	//raw();
+	//Do not use raw, it is shit
+	
 	cbreak();
+	
 	noecho();
 	keypad(stdscr, true);
-	//raw();
 	console::_activeColor = -1;
 	ready = true;
 }

@@ -33,3 +33,5 @@ bool adv::doubleSize;
 bool adv::thread;
 std::condition_variable adv::cvStart;
 std::mutex adv::startLock;
+std::condition_variable adv::cvThreadState;
+std::mutex adv::threadStateMux;
