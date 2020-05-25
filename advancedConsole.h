@@ -14,13 +14,20 @@
 #include <string.h>
 
 #ifdef __linux__
-#include <curses.h>
+//#include <curses.h>
+#include <ncursesw/ncurses.h>
 #endif
 
 #define DRAWINGMODE_BASIC 0
 #define DRAWINGMODE_COMPARE 1
 #define DRAWINGMODE_AUTO 2
 #define DRAWINGMODE_COMPLEX 3
+
+#define BORDER_LINE 2
+#define BORDER_DOUBLE 3
+#define BORDER_SIMPLE 0
+#define BORDER_BLOCK 1
+#define BORDER_DITHER 4
 
 //Disable curses garbage
 #undef border
@@ -329,6 +336,10 @@ class adv {
 		write(x1,y0,'+', color);
 		write(x0,y1,'+', color);
 		write(x1,y1,'+', color);
+	}
+	
+	static void fancyBorder(int x0, int y0, int x1, int y1, int type, char color) {
+		
 	}
 	
 	static void fill(int x0, int y0, int x1, int y1) {

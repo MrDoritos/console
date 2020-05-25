@@ -2,7 +2,7 @@
 #include <iostream>
 #include <stdio.h>
 #include <unistd.h>
-#include <ncurses.h>
+#include <ncursesw/ncurses.h>
 #include <console.h>
 #include <sys/ioctl.h>
 #include <string>
@@ -18,6 +18,8 @@ bool console::useRefresh;
 console::constructor::constructor() {	
 	useRefresh = true;
 	setlocale(LC_ALL, "");
+	set_escdelay(0);
+
 	initscr();
 	start_color();
 	auto map_color = [](int i) {
@@ -181,7 +183,7 @@ void console::write(wchar_t* fb, char* cb, int length) {
 	for (int y = 0; y < h; y++) {
 		for (int x = 0; x < w; x++) {
 			setConsoleColor(cb[i]);
-			mvaddch(y, x, fb[i++]);
+			mvaddnwstr(y, x, &fb[i++], 1);
 		}
 	}
 	if (useRefresh)
@@ -189,7 +191,7 @@ void console::write(wchar_t* fb, char* cb, int length) {
 }
 
 void console::write(int x, int y, wchar_t character) {
-	mvaddch(y, x, character);	
+	mvaddnwstr(y, x, &character, 1);	
 	refresh();
 }
 
