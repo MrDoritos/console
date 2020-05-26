@@ -57,6 +57,10 @@ extern "C" {
 #define VK_UP KEY_UP
 #define VK_DOWN KEY_DOWN
 
+#define VK_HOME KEY_HOME
+#define VK_END KEY_END
+#define VK_INSERT KEY_IC
+
 #define VK_BACKSPACE 263 //Holy fuck ncurses is such a shit library. Truely proprietary shit tier
 	//KEY_BACKSPACE
 	//238
