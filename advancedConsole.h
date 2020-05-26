@@ -339,7 +339,52 @@ class adv {
 	}
 	
 	static void fancyBorder(int x0, int y0, int x1, int y1, int type, char color) {
-		
+		switch (type) {
+			case BORDER_BLOCK: {
+					line(x0,y0,x1,y0,L'█', color);
+					line(x1,y0,x1,y1,L'█', color);
+					line(x0,y1,x1,y1,L'█', color);
+					line(x0,y0,x0,y1,L'█', color);
+				break;
+			}
+			case BORDER_DITHER: {
+					line(x0,y0,x1,y0,L'▒', color);
+					line(x1,y0,x1,y1,L'▒', color);
+					line(x0,y1,x1,y1,L'▒', color);
+					line(x0,y0,x0,y1,L'▒', color);					
+					write(x0,y0,L'▓', color);
+					write(x1,y0,L'▓', color);
+					write(x0,y1,L'▓', color);
+					write(x1,y1,L'▓', color);
+				break;
+			}
+			case BORDER_DOUBLE: {
+					line(x0,y0,x1,y0,L'═', color);
+					line(x1,y0,x1,y1,L'║', color);
+					line(x0,y1,x1,y1,L'═', color);
+					line(x0,y0,x0,y1,L'║', color);
+					write(x0,y0,L'╔', color);
+					write(x1,y0,L'╗', color);
+					write(x0,y1,L'╚', color);
+					write(x1,y1,L'╝', color);		
+				break;
+			}
+			case BORDER_LINE: {
+					line(x0,y0,x1,y0,L'─', color);
+					line(x1,y0,x1,y1,L'│', color);
+					line(x0,y1,x1,y1,L'─', color);
+					line(x0,y0,x0,y1,L'│', color);
+					write(x0,y0,L'┌', color);
+					write(x1,y0,L'┐', color);
+					write(x0,y1,L'└', color);
+					write(x1,y1,L'┘', color);
+				break;
+			}
+			case BORDER_SIMPLE: {
+					border(x0,y0,x1,y1,color);
+				break;
+			}
+		}
 	}
 	
 	static void fill(int x0, int y0, int x1, int y1) {
