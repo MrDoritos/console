@@ -247,7 +247,7 @@ class adv {
 		}
 		modify = true;
 	}
-	
+		
 	static void write(int x, int y, wchar_t character) {
 		if (!bound(x, y))
 			return;
@@ -288,6 +288,19 @@ class adv {
 				cb[get(x + i, y)] = color;
 			}
 		}
+		modify = true;
+	}
+	
+	static void write(int x, int y, const char* string, const char* colorbuffer) {
+		std::lock_guard<std::mutex> lk(buffers);
+		int length = strlen(string);
+		for (int i = 0; i < length; i++) {
+			if (bound(x + i, y)) {
+				fb[get(x + i, y)] = string[i];
+				cb[get(x + i, y)] = colorbuffer[i];
+			}
+		}
+		
 		modify = true;
 	}
 	
