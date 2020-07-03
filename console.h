@@ -121,8 +121,8 @@ class console {
 	CONSOLE static HANDLE conHandle;
 	CONSOLE static HANDLE inHandle;
 	CONSOLE static HANDLE ogConHandle;
-	private:
 	CONSOLE static int CONSOLECALL _getCharInfoColor(int color);
+	private:
 	#elif defined __linux__	
 	static void _refreshSize();
 	static struct winsize w;

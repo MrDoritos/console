@@ -5,6 +5,8 @@
 #include <conio.h>
 #include <stdio.h>
 
+#include <bitset>
+
 //DLL Creation...
 //#if (defined DLLEXPORT && defined __WIN32)
 //extern "C" {
@@ -176,6 +178,10 @@ int console::readKey() {
 			char modifiers = irec.Event.KeyEvent.dwControlKeyState;
 			krec = (KEY_EVENT_RECORD&)irec.Event;
 			asciiChar = krec.uChar.AsciiChar;
+			std::string p0 = std::bitset<8>(modifiers).to_string();
+			std::string p1 = std::bitset<8>(asciiChar).to_string();
+			std::string p2 = std::bitset<32>(irec.Event.KeyEvent.wVirtualKeyCode).to_string();
+			fprintf(stderr, "mod:%i asc:%c bs:%s as:%s %s\r\n", modifiers, asciiChar, p0.c_str(), p1.c_str(), p2.c_str());
 			if (asciiChar < 128 && asciiChar > 31)
 				return asciiChar | (modifiers << 24);
 			
