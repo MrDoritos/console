@@ -67,7 +67,10 @@ int console::readKey() {
 
 int console::readKeyAsync() {
 	timeout(0);
-	return getch();
+	int key = getch();
+	if (key == -1)
+		key = 0;
+	return key;
 }
 
 void console::sleep(int millis) {
