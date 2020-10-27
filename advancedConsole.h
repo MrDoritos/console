@@ -44,6 +44,7 @@ class adv {
 	static _constructor construct;
 	
 	static void error(char* err);
+	static void error(const char* err);
 	
 	static void _advancedConsoleConstruct() {
 		run = true;

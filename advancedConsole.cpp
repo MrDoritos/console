@@ -16,6 +16,10 @@ void adv::error(char* err) {
 	exit(1);
 }
 
+void adv::error(const char* err) {
+	adv::error((char*)err);
+}
+
 adv::_constructor adv::construct;
 std::thread adv::uiloop;
 std::mutex adv::buffers;

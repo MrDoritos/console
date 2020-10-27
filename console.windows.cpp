@@ -162,9 +162,8 @@ int console::readKeyAsync() {
 			
 			return irec.Event.KeyEvent.wVirtualKeyCode | (modifiers << 24);
 		}
-	} else {
-		return 0;
 	}
+	return 0;
 }
 
 int console::readKey() {
