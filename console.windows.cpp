@@ -20,7 +20,7 @@ console::constructor console::cons;
 HANDLE console::conHandle;
 HANDLE console::inHandle;
 HANDLE console::ogConHandle;
-int console::_activeColor;
+color_t console::_activeColor;
 bool console::ready;
 
 console::constructor::constructor() {	
@@ -86,12 +86,12 @@ void console::write(int x, int y, const char* str) {
 	WriteConsoleOutput(console::conHandle, framebuffer, csbi.dwSize, {0,0}, &srwin);
 }
 
-void console::write(int x, int y, const char* str, char color) {
+void console::write(int x, int y, const char* str, color_t color) {
 	console::setConsoleColor(color);
 	console::write(x,y,str);
 }
 
-void console::write(int x, int y, std::string& str, char color) {
+void console::write(int x, int y, std::string& str, color_t color) {
 	console::setConsoleColor(color);
 	console::write(x,y,str);
 }
@@ -119,7 +119,7 @@ void console::clear() {
 	SetConsoleCursorPosition(console::conHandle, topLeft);
 }
 
-void console::setConsoleColor(int color) {
+void console::setConsoleColor(color_t color) {
 	if (console::_activeColor == _getCharInfoColor(color)) {
 		return;
 	}
@@ -128,7 +128,7 @@ void console::setConsoleColor(int color) {
 }
 
 //Cyan and yellow are flipped with windows
-int console::_getCharInfoColor(int color) {	
+color_t console::_getCharInfoColor(color_t color) {	
 	if ((color & FWHITE) == FCYAN)
 		color = (color & ~FWHITE) | FYELLOW;
 	else
@@ -190,7 +190,7 @@ int console::readKey() {
 	return 0;
 }
 
-void console::write(char* fb, char* cb, int length) {
+void console::write(char* fb, color_t* cb, int length) {
 	CHAR_INFO* framebuffer = (CHAR_INFO*)alloca(sizeof(CHAR_INFO) * length);
 	
 	wchar_t b;
@@ -206,7 +206,7 @@ void console::write(char* fb, char* cb, int length) {
 	WriteConsoleOutput(console::conHandle, framebuffer, csbi.dwSize, {0,0}, &srwin);
 }
 
-void console::write(wchar_t* fb, char* cb, int length) {
+void console::write(wchar_t* fb, color_t* cb, int length) {
 	{
 		CHAR_INFO framebuffer[length];
 		for (int i = 0; i < length; i++) {
@@ -224,7 +224,7 @@ void console::write(CHAR_INFO* fb, int length) {
 	WriteConsoleOutput(console::conHandle, fb, csbi.dwSize, {0,0}, &srwin);	
 }
 
-void console::write(int x, int y, char character, char color) {
+void console::write(int x, int y, char character, color_t color) {
 	console::setConsoleColor(color);
 	console::write(x, y, character);
 }
@@ -235,7 +235,7 @@ void console::write(int x, int y, char character) {
 	WriteConsole(console::conHandle, (const char*)&character, 1, &written, NULL);
 }
 
-void console::write(int x, int y, wchar_t character, char color) {
+void console::write(int x, int y, wchar_t character, color_t color) {
 	console::setConsoleColor(color);
 	console::write(x, y, character);
 }

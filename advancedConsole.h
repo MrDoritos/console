@@ -59,6 +59,7 @@ class adv {
 		ready = false;
 		run = false;
 		setThreadState(true); //In case thread is waiting
+		uiloop.join();
 		console::cons.~constructor();
 	}
 	
@@ -88,10 +89,10 @@ class adv {
 	
 	static bool allocate(int width, int height) {
 		fb = new wchar_t[width * height];
-		cb = new char[width * height];
+		cb = new color_t[width * height];
 		if (drawingMode == DRAWINGMODE_COMPARE) {
 			oldfb = new wchar_t[width * height];
-			oldcb = new char[width * height];
+			oldcb = new color_t[width * height];
 			if (!oldfb || !oldcb)
 				return false;
 		}
@@ -170,7 +171,7 @@ class adv {
 				}
 			case DRAWINGMODE_COMPARE: {
 				oldfb = new wchar_t[width * height];
-				oldcb = new char[width * height];
+				oldcb = new color_t[width * height];
 				if (!oldfb || !oldcb || !cb || !fb)
 					error("Could not allocate a buffer for DRAWINGMODE_COMPARE");
 				drawingMode = DRAWINGMODE_COMPARE;
@@ -216,7 +217,7 @@ class adv {
 		if (drawingMode == DRAWINGMODE_BASIC) {
 			if (doubleSize) {
 				wchar_t buffer[(width * 2) * height];
-				char cbuffer[(width * 2) * height];
+				color_t cbuffer[(width * 2) * height];
 				for (int x = 0; x < width; x++) {
 					for (int y = 0; y < height; y++) {
 						 buffer[(y * width * 2) + (x * 2)]     = fb[get(x,y)];
@@ -238,7 +239,7 @@ class adv {
 		}
 	}
 	
-	static void write(wchar_t* framebuffer, char* colorbuffer, int width, int height) {
+	static void write(wchar_t* framebuffer, color_t* colorbuffer, int width, int height) {
 		std::lock_guard<std::mutex> lk(buffers);
 		for (int x = 0; x < width && x < adv::width; x++) {
 			for (int y = 0; y < height && y < adv::height; y++) {
@@ -269,7 +270,7 @@ class adv {
 	}
 	
 	//Normal write
-	static void norm(float posx, float posy, const char* string, char color) {
+	static void norm(float posx, float posy, const char* string, color_t color) {
 		int l = strlen(string);
 		int ox = adv::getOffsetX(posx, l);
 		int oy = adv::getOffsetY(posy, 1);
@@ -280,7 +281,7 @@ class adv {
 		norm(posx, posy, string, FWHITE | BBLACK);
 	}
 	
-	static void write(int x, int y, const char* string, char color) {
+	static void write(int x, int y, const char* string, color_t color) {
 		std::lock_guard<std::mutex> lk(buffers);
 		int length = strlen(string);
 		for (int i = 0; i < length; i++) {
@@ -292,7 +293,7 @@ class adv {
 		modify = true;
 	}
 	
-	static void write(int x, int y, const char* string, const char* colorbuffer) {
+	static void write(int x, int y, const char* string, const color_t* colorbuffer) {
 		std::lock_guard<std::mutex> lk(buffers);
 		int length = strlen(string);
 		for (int i = 0; i < length; i++) {
@@ -305,7 +306,7 @@ class adv {
 		modify = true;
 	}
 	
-	static void write(int x, int y, wchar_t character, char color) {
+	static void write(int x, int y, wchar_t character, color_t color) {
 		if (!bound(x, y))
 			return;
 		
@@ -317,7 +318,7 @@ class adv {
 		}
 	}
 	
-	static void clear(wchar_t character = L' ', char color = FWHITE | BBLACK) {
+	static void clear(wchar_t character = L' ', color_t color = FWHITE | BBLACK) {
 		std::lock_guard<std::mutex> lk(buffers);
 		//memset(fb, L' ', width * height * sizeof(wchar_t));
 		for (int i = 0; i < width * height; i++) {
@@ -334,14 +335,14 @@ class adv {
 		rectangle(x0, y0, x1, y1, L'#', FWHITE|BBLACK);
 	}
 	
-	static void rectangle(int x0, int y0, int x1, int y1, wchar_t character, char color) {
+	static void rectangle(int x0, int y0, int x1, int y1, wchar_t character, color_t color) {
 		line(x0,y0,x1,y0,character,color);
 		line(x1,y0,x1,y1,character,color);
 		line(x0,y1,x1,y1,character,color);
 		line(x0,y0,x0,y1,character,color);
 	}
 	
-	static void border(int x0, int y0, int x1, int y1, char color) {
+	static void border(int x0, int y0, int x1, int y1, color_t color) {
 		line(x0,y0,x1,y0,'-', color);
 		line(x1,y0,x1,y1,'|', color);
 		line(x0,y1,x1,y1,'-', color);
@@ -352,7 +353,7 @@ class adv {
 		write(x1,y1,'+', color);
 	}
 	
-	static void fancyBorder(int x0, int y0, int x1, int y1, int type, char color) {
+	static void fancyBorder(int x0, int y0, int x1, int y1, int type, color_t color) {
 		switch (type) {
 			case BORDER_BLOCK: {
 					line(x0,y0,x1,y0,L'█', color);
@@ -405,7 +406,7 @@ class adv {
 		fill(x0, y0, x1, y1, L'#', FWHITE|BBLACK);
 	}
 	
-	static void fill(int x0, int y0, int x1, int y1, wchar_t character, char color) {
+	static void fill(int x0, int y0, int x1, int y1, wchar_t character, color_t color) {
 		std::lock_guard<std::mutex> lk(buffers);
 		for (int x = x0; x < x1; x++) {
 			for (int y = y0; y < y1; y++) {
@@ -424,7 +425,7 @@ class adv {
 		line(x0,y0,x1,y1,'#',FWHITE|BBLACK);
 	}
 		
-	static void line(int x1, int y1, int x2, int y2, wchar_t character, char color) {		
+	static void line(int x1, int y1, int x2, int y2, wchar_t character, color_t color) {		
 		//if (!bound(x1, y1) ||
 		//	!bound(x2, y2))
 		//	return;
@@ -517,7 +518,7 @@ class adv {
 		modify = true;
 	}
 	
-	static void triangle(int x0, int y0, int x1, int y1, int x2, int y2, wchar_t character, char color) {
+	static void triangle(int x0, int y0, int x1, int y1, int x2, int y2, wchar_t character, color_t color) {
 		if (!bound(x0, y0) ||
 			!bound(x1, y1) ||
 			!bound(x2, y2))
@@ -592,7 +593,7 @@ class adv {
 		triangle(x0, y0, x1, y1, x2, y2, L'#', FWHITE | BBLACK);
 	}
 	
-	static void legacyCircle(int x, int y, int radius, wchar_t character, char color) {
+	static void legacyCircle(int x, int y, int radius, wchar_t character, color_t color) {
 		std::lock_guard<std::mutex> lk(buffers);
 		const double double_Pi = 6.28318530d;
 		double step = 1 / (radius * double_Pi);
@@ -612,7 +613,7 @@ class adv {
 		circle(x, y, radius, '#', FWHITE | BBLACK);
 	}
 	
-	static void circle(int x0, int y0, int radius, wchar_t character, char color) {
+	static void circle(int x0, int y0, int radius, wchar_t character, color_t color) {
 		std::lock_guard<std::mutex> lk(buffers);
 		auto drawCircle = [&](int xc, int yc, int x, int y) {			
 			if (bound(xc+x, yc+y)) {
@@ -727,8 +728,8 @@ class adv {
 	
 	static wchar_t* fb;
 	static wchar_t* oldfb;
-	static char* cb;
-	static char* oldcb;
+	static color_t* cb;
+	static color_t* oldcb;
 	
 	private:
 	static int drawingMode;

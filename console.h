@@ -76,8 +76,10 @@ extern "C" {
 #define __CTRL (0x08 << 24)
 #define __NMLK (0x20 << 24)
 #define NOMOD(x) (x & 0x00FFFFFF)
-#define HASMOD(x, mod) (x & mod == mod)
+#define HASMOD(x, mod) ((x & mod) == mod)
 #define HASKEY(x, key) (NOMOD(x) == key)
+
+typedef unsigned char color_t;
 
 class console {
 	public:
@@ -85,22 +87,22 @@ class console {
 	CONSOLE static void CONSOLECALL setCursorPosition(int x, int y);
 	CONSOLE static void CONSOLECALL setCursorLeft(int x);
 	CONSOLE static void CONSOLECALL setCursorTop(int y);
-	CONSOLE static void CONSOLECALL setConsoleColor(int color);
+	CONSOLE static void CONSOLECALL setConsoleColor(color_t color);
 	CONSOLE static int CONSOLECALL getConsoleWidth();
 	CONSOLE static int CONSOLECALL getConsoleHeight();
 	CONSOLE static int CONSOLECALL readKey();
 	CONSOLE static int CONSOLECALL readKeyAsync();
 	CONSOLE static void CONSOLECALL clear();
 	CONSOLE static void CONSOLECALL write(int x, int y, char character);
-	CONSOLE static void CONSOLECALL write(int x, int y, char character, char color);
-	CONSOLE static void CONSOLECALL write(char* fb, char* cb, int length);
-	CONSOLE static void CONSOLECALL write(wchar_t* fb, char* cb, int length);
+	CONSOLE static void CONSOLECALL write(int x, int y, char character, color_t color);
+	CONSOLE static void CONSOLECALL write(char* fb, color_t* cb, int length);
+	CONSOLE static void CONSOLECALL write(wchar_t* fb, color_t* cb, int length);
 	CONSOLE static void CONSOLECALL write(int x, int y, wchar_t character);
-	CONSOLE static void CONSOLECALL write(int x, int y, wchar_t character, char color);
+	CONSOLE static void CONSOLECALL write(int x, int y, wchar_t character, color_t color);
 	CONSOLE static void CONSOLECALL write(int x, int y, std::string& str);
-	CONSOLE static void CONSOLECALL write(int x, int y, std::string& str, char color);
+	CONSOLE static void CONSOLECALL write(int x, int y, std::string& str, color_t color);
 	CONSOLE static void CONSOLECALL write(int x, int y, const char* str);
-	CONSOLE static void CONSOLECALL write(int x, int y, const char* str, char color);
+	CONSOLE static void CONSOLECALL write(int x, int y, const char* str, color_t color);
 	CONSOLE static void CONSOLECALL sleep(int millis);
 	CONSOLE static bool ready;
 	
@@ -115,14 +117,14 @@ class console {
 	static constructor cons;	
 	
 	private:
-	CONSOLE static int _activeColor;
+	CONSOLE static color_t _activeColor;
 	#if defined __WIN32
 	public:
 	CONSOLE static void CONSOLECALL write(CHAR_INFO* fb, int length);
 	CONSOLE static HANDLE conHandle;
 	CONSOLE static HANDLE inHandle;
 	CONSOLE static HANDLE ogConHandle;
-	CONSOLE static int CONSOLECALL _getCharInfoColor(int color);
+	CONSOLE static color_t CONSOLECALL _getCharInfoColor(color_t color);
 	private:
 	#elif defined __linux__	
 	static void _refreshSize();

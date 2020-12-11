@@ -11,7 +11,7 @@
 //Define constructor
 console::constructor console::cons;
 winsize console::w;
-int console::_activeColor;
+color_t console::_activeColor;
 bool console::ready;
 bool console::useRefresh;
 
@@ -74,7 +74,7 @@ int console::readKeyAsync() {
 }
 
 void console::sleep(int millis) {
-	usleep(millis);
+	usleep(millis * 1000);
 }
 
 void console::_refreshSize() {
@@ -91,8 +91,8 @@ int console::getConsoleHeight() {
 	return int(w.ws_row);
 }
 
-void console::setConsoleColor(int color) {
-	const auto getCursesColor = [](int i) {
+void console::setConsoleColor(color_t color) {
+	const auto getCursesColor = [](color_t i) {
 		short fg = i & 0b00000111, bg = i & 0b01110000;
 		int c = 0;
 		bg >>= 4;
@@ -137,7 +137,7 @@ void console::write(int x, int y, const char* str) {
 	console::write(x, y, str, _activeColor);
 }
 
-void console::write(int x, int y, const char* str, char c) {
+void console::write(int x, int y, const char* str, color_t c) {
 	int w = console::getConsoleWidth();
 	int h = console::getConsoleHeight();
 	int l = strlen(str);
@@ -152,7 +152,7 @@ void console::write(int x, int y, const char* str, char c) {
 		refresh();
 }
 
-void console::write(int x, int y, std::string& str, char c) {
+void console::write(int x, int y, std::string& str, color_t c) {
 	int w = console::getConsoleWidth();
 	int h = console::getConsoleHeight();
 	if (y >= h || x >= w)
@@ -165,7 +165,7 @@ void console::write(int x, int y, std::string& str, char c) {
 		refresh();
 }
 
-void console::write(char* fb, char* cb, int length) {
+void console::write(char* fb, color_t* cb, int length) {
 	int i = 0;
 	int w = console::getConsoleWidth();
 	int h = console::getConsoleHeight();
@@ -179,7 +179,7 @@ void console::write(char* fb, char* cb, int length) {
 		refresh();
 }
 
-void console::write(wchar_t* fb, char* cb, int length) {
+void console::write(wchar_t* fb, color_t* cb, int length) {
 	int i = 0;
 	int w = getConsoleWidth();
 	int h = getConsoleHeight();
@@ -198,7 +198,7 @@ void console::write(int x, int y, wchar_t character) {
 	refresh();
 }
 
-void console::write(int x, int y, wchar_t character, char color) {
+void console::write(int x, int y, wchar_t character, color_t color) {
 	console::setConsoleColor(color);
 	console::write(x, y, character);
 }
@@ -208,7 +208,7 @@ void console::write(int x, int y, char character) {
 	refresh();
 }
 
-void console::write(int x, int y, char character, char color) {
+void console::write(int x, int y, char character, color_t color) {
 	console::setConsoleColor(color);
 	console::write(x, y, character);
 }
