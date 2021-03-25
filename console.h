@@ -75,6 +75,7 @@ extern "C" {
 
 #define __CTRL (0x08 << 24)
 #define __NMLK (0x20 << 24)
+#define __ALT (0b000001 << 24)
 #define NOMOD(x) (x & 0x00FFFFFF)
 #define HASMOD(x, mod) ((x & mod) == mod)
 #define HASKEY(x, key) (NOMOD(x) == key)

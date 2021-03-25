@@ -56,10 +56,14 @@ class adv {
 		uiloop = std::thread(loop);
 	}
 	static void _advancedConsoleDestruct() {	
+		if (!ready)
+			return;
 		ready = false;
 		run = false;
-		setThreadState(true); //In case thread is waiting
-		uiloop.join();
+		if (uiloop.joinable()) {
+			setThreadState(true);
+			uiloop.join();
+		}
 		console::cons.~constructor();
 	}
 	
@@ -129,6 +133,8 @@ class adv {
 		}
 		cvStart.notify_all();
 		
+		thread = true;
+		
 		while (run) {
 			//Other threads can read keys, not this one
 			
@@ -143,14 +149,17 @@ class adv {
 			}
 			
 			//condition:;
-			waitForThreadState();
 			
-			while (!modify)
+			while (!modify && thread)
 				//console::sleep(33); //~30 fps
 				console::sleep(16);
 				//std::this_thread::yield();
 				//console::sleep(1);
+				
+			waitForThreadState();
 		}
+		
+		thread = false;
 	}
 	
 	static void waitForThreadState() {
