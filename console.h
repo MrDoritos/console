@@ -52,6 +52,8 @@ extern "C" {
 #define VK_RETURN '\n' //On windows this would be the carriage return instead
 #define VK_DELETE KEY_DELETE
 #define VK_TAB '\t'
+#define VK_SHIFT '?'
+#define wmain main
 
 #define VK_LEFT KEY_LEFT
 #define VK_RIGHT KEY_RIGHT

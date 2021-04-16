@@ -17,10 +17,13 @@ bool console::useRefresh;
 
 console::constructor::constructor() {	
 	useRefresh = true;
-	setlocale(LC_ALL, "");
-	set_escdelay(0);
 
 	initscr();
+
+	curs_set(0);
+	set_escdelay(0);
+	setlocale(LC_ALL, "");
+
 	start_color();
 	auto map_color = [](int i) {
 		switch (i) {
@@ -29,7 +32,7 @@ console::constructor::constructor() {
 			default: return i;
 		}
 	};
-	for (int i = 0; i < 64; i++) {
+	for (int i = 0; i < 256; i++) {
 		init_pair(i + 1, map_color(i % 8), map_color((i / 8) % 8));
 	}
 	
