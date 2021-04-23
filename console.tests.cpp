@@ -15,15 +15,15 @@ int main() {
 	int i = 0;	
 	int cwidth = console::getConsoleWidth(), cheight = console::getConsoleHeight();
 	
-	for (i = 0; i < 64; i++) {
-		console::write(i % cwidth, (i / cwidth) % cheight, '#', (i % 8) | ((((i) / 8) % 8) << 4));
+	for (i = 0; i < 256; i++) {
+		console::write(i % cwidth, (i / cwidth) % cheight, '#', (i % 16) | ((((i) / 16) % 16) << 4));
 	}
 	
-	for (i = 0; i < 64; i++) {
-		console::write(i % cwidth, ((i / cwidth) + 20) % cheight, '*', (i % 8) | (((i / 8) % 8) << 4));
+	for (i = 0; i < 256; i++) {
+		console::write(i % cwidth, ((i / cwidth) + 20) % cheight, '*', (i % 16) | (((i / 16) % 16) << 4));
 	}
 
-	for (i = 0; i < 8; i++) {
+	for (i = 0; i < 64; i++) {
 		console::write(i % cwidth, ((i / cwidth) + 30) % cheight, L'░', i << 4);
 	}
 	

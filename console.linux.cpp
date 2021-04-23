@@ -33,7 +33,7 @@ console::constructor::constructor() {
 		}
 	};
 	for (int i = 0; i < 256; i++) {
-		init_pair(i + 1, map_color(i % 8), map_color((i / 8) % 8));
+		init_pair(i + 1, map_color(i % 16), map_color((i / 16) % 16));
 	}
 	
 	//nocbreak(); //Disable ESC sequence checking. Might use timeout(0) exclusively for input
@@ -105,11 +105,14 @@ void console::setConsoleColor(color_t color) {
 	};
 	if (console::_activeColor == color)
 		return;
-	if (console::_activeColor != -1)
+	//if (console::_activeColor != -1)
 		//attroff(COLOR_PAIR(getCursesColor(color)));
-		attroff(COLOR_PAIR((color & 0b00001111) + ((color & 0b11110000)) + 1));
-	attron(COLOR_PAIR((color & 0b00001111) + ((color & 0b11110000)) + 1));
-	attron(COLOR_PAIR(getCursesColor(color)));
+		//attroff(COLOR_PAIR((color & 0b00001111) + ((color & 0b11110000)) + 1));
+	//attroff(COLOR_PAIR((console::_activeColor & 0b00001111) + ((console::_activeColor & 0b11110000)) + 1));
+	attroff(COLOR_PAIR(console::_activeColor + 1));
+	//attron(COLOR_PAIR((color & 0b00001111) + ((color & 0b11110000)) + 1));
+	attron(COLOR_PAIR(color + 1));
+	//attron(COLOR_PAIR(getCursesColor(color)));
 	console::_activeColor = color;
 }
 
