@@ -54,6 +54,8 @@ class adv {
 		doubleSize = false;
 		thread = true;
 		uiloop = std::thread(loop);
+		ascii = false;
+		disableThreadSafety = false;
 	}
 	static void _advancedConsoleDestruct() {	
 		if (!ready)
@@ -83,6 +85,10 @@ class adv {
 			doubleSize = false;
 			clear();
 		}
+	}
+	
+	static void setThreadSafety(bool state) {
+		disableThreadSafety = !state;
 	}
 	
 	static void setThreadState(bool state) {
@@ -170,6 +176,10 @@ class adv {
 			cvThreadState.wait(lk);
 		}
 	}
+
+	static void setAscii(bool bAscii) {
+		ascii = bAscii;
+	}
 	
 	static void setDrawingMode(int mode) {
 		std::lock_guard<std::mutex> lk(buffers);
@@ -235,9 +245,15 @@ class adv {
 						cbuffer[(y * width * 2) + (x * 2 + 1)] = cb[get(x,y)];
 					}
 				}
-				console::write(&buffer[0], &cbuffer[0], (width * 2) * height);
+				if (ascii)
+					writeAscii(&buffer[0], &cbuffer[0], (width * 2) * height);
+				else
+					console::write(&buffer[0], &cbuffer[0], (width * 2) * height);
 			} else {
-				console::write(fb, cb, width * height);
+				if (ascii)
+					writeAscii(fb, cb, width * height);
+				else
+					console::write(fb, cb, width * height);
 			}
 		}
 		
@@ -246,6 +262,13 @@ class adv {
 		
 		modify = false;
 		}
+	}
+
+	static void writeAscii(wchar_t *framebuffer, color_t *colorbuffer, int length) {
+		char asciiBuffer[length];
+		for (int i = 0; i < length; i++)
+			asciiBuffer[i] = (char)framebuffer[i];
+		console::write(&asciiBuffer[0], colorbuffer, length);
 	}
 	
 	static void write(wchar_t* framebuffer, color_t* colorbuffer, int width, int height) {
@@ -319,7 +342,11 @@ class adv {
 		if (!bound(x, y))
 			return;
 		
-		{
+		if (disableThreadSafety) {
+			fb[get(x, y)] = character;
+			cb[get(x,y)] = color;
+			modify = true;
+		} else {
 			std::lock_guard<std::mutex> lk(buffers);
 			fb[get(x, y)] = character;
 			cb[get(x, y)] = color;			
@@ -743,6 +770,8 @@ class adv {
 	private:
 	static int drawingMode;
 	static bool doubleSize;
+	static bool disableThreadSafety;
+	static bool ascii;
 };
 
 #endif

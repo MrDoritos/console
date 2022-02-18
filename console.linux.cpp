@@ -25,15 +25,39 @@ console::constructor::constructor() {
 	setlocale(LC_ALL, "");
 
 	start_color();
+		
+	if (can_change_color()) {
+		int t = 500;
+		if (COLORS < 256)
+			t = 1000;
+		init_color(COLOR_BLACK, 0,0,0);
+		init_color(COLOR_RED,t,0,0);
+		init_color(COLOR_GREEN,0,t,0);
+		init_color(COLOR_YELLOW,t,t,0);
+		init_color(COLOR_BLUE,0,0,t);
+		init_color(COLOR_MAGENTA,t,0,t);
+		init_color(COLOR_CYAN,0,t,t);
+		init_color(COLOR_WHITE,t,t,t);
+	}	
+	
 	auto map_color = [](int i) {
+		if (COLORS > 255)
+			return i;
 		switch (i) {
 			case COLOR_BLUE: return COLOR_RED;
 			case COLOR_RED: return COLOR_BLUE;
 			default: return i;
 		}
 	};
-	for (int i = 0; i < 256; i++) {
-		init_pair(i + 1, map_color(i % 16), map_color((i / 16) % 16));
+	
+	if (COLORS > 255) {
+		for (int i = 0; i < 256; i++) {
+			init_pair(i + 1, map_color(i % 16), map_color((i / 16) % 16));
+		}
+	} else {
+		for (int i = 0; i < 64; i++) {
+			init_pair(i + 1, map_color(i % 8), map_color((i / 8) % 8));
+		}		
 	}
 	
 	//nocbreak(); //Disable ESC sequence checking. Might use timeout(0) exclusively for input
@@ -103,6 +127,13 @@ void console::setConsoleColor(color_t color) {
 		c += fg;
 		return c + 1;
 	};
+	const auto truncateColor = [](color_t i) {
+		int fg = i & 0b00000111, bg = i & 0b01110000;
+		return (bg >> 1) | fg;
+	};
+	if (COLORS < 256)
+		color = truncateColor(color);
+	
 	if (console::_activeColor == color)
 		return;
 	//if (console::_activeColor != -1)
@@ -125,7 +156,9 @@ void console::setCursorLeft(int x) {}
 
 void console::setCursorTop(int y) {}
 
-void console::setCursorPosition(int x, int y) {}
+void console::setCursorPosition(int x, int y) 	{
+	move(y,x);
+}
 
 void console::write(int x, int y, std::string& str) {
 	int w = console::getConsoleWidth();

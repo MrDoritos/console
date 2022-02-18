@@ -23,6 +23,7 @@ void adv::error(const char* err) {
 adv::_constructor adv::construct;
 std::thread adv::uiloop;
 std::mutex adv::buffers;
+bool adv::ascii;
 bool adv::run;
 bool adv::ready;
 bool adv::modify;
@@ -33,6 +34,7 @@ wchar_t* adv::oldfb;
 color_t* adv::cb;
 color_t* adv::oldcb;
 int adv::drawingMode;
+bool adv::disableThreadSafety;
 bool adv::doubleSize;
 bool adv::thread;
 std::condition_variable adv::cvStart;
