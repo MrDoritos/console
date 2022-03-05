@@ -767,7 +767,6 @@ class adv {
 	static color_t* cb;
 	static color_t* oldcb;
 	
-	private:
 	static int drawingMode;
 	static bool doubleSize;
 	static bool disableThreadSafety;

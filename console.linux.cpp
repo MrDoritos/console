@@ -42,10 +42,12 @@ console::constructor::constructor() {
 	
 	auto map_color = [](int i) {
 		if (COLORS > 255)
-			return i;
+			;//return i;
 		switch (i) {
 			case COLOR_BLUE: return COLOR_RED;
 			case COLOR_RED: return COLOR_BLUE;
+			case 0b1000 | COLOR_BLUE: return 0b1000 | COLOR_RED;
+			case 0b1000 | COLOR_RED: return 0b1000 | COLOR_BLUE;
 			default: return i;
 		}
 	};
