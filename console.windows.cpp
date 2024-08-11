@@ -208,7 +208,7 @@ void console::write(char* fb, color_t* cb, int length) {
 
 void console::write(wchar_t* fb, color_t* cb, int length) {
 	{
-		CHAR_INFO framebuffer[length];
+		CHAR_INFO *framebuffer = (CHAR_INFO*)alloca(length * sizeof(CHAR_INFO));
 		for (int i = 0; i < length; i++) {
 			framebuffer[i].Char.UnicodeChar = fb[i];
 			framebuffer[i].Attributes = _getCharInfoColor(cb[i]);

@@ -5,7 +5,9 @@
 #include <iostream>
 #define NO_KEY EOF
 
-#if defined __WIN32
+#if defined __WIN32 || _WIN32
+#define __WIN32
+#define _WIN32
 #include <Windows.h>
 //#include <console.windows.h>
 

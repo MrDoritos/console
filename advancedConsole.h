@@ -235,8 +235,8 @@ class adv {
 		
 		if (drawingMode == DRAWINGMODE_BASIC) {
 			if (doubleSize) {
-				wchar_t buffer[(width * 2) * height];
-				color_t cbuffer[(width * 2) * height];
+				wchar_t *buffer = (wchar_t*)alloca((width * 2) * height * sizeof(wchar_t));
+				color_t *cbuffer = (color_t*)alloca((width * 2) * height * sizeof(wchar_t));
 				for (int x = 0; x < width; x++) {
 					for (int y = 0; y < height; y++) {
 						 buffer[(y * width * 2) + (x * 2)]     = fb[get(x,y)];
@@ -265,7 +265,7 @@ class adv {
 	}
 
 	static void writeAscii(wchar_t *framebuffer, color_t *colorbuffer, int length) {
-		char asciiBuffer[length];
+		char *asciiBuffer = (char*)alloca(length);
 		for (int i = 0; i < length; i++)
 			asciiBuffer[i] = (char)framebuffer[i];
 		console::write(&asciiBuffer[0], colorbuffer, length);
@@ -631,10 +631,10 @@ class adv {
 	
 	static void legacyCircle(int x, int y, int radius, wchar_t character, color_t color) {
 		std::lock_guard<std::mutex> lk(buffers);
-		const double double_Pi = 6.28318530d;
+		const double double_Pi = 6.28318530;
 		double step = 1 / (radius * double_Pi);
 		int xF, yF;
-		for (double theta = 0.0d; theta < double_Pi; theta += step) {
+		for (double theta = 0.0; theta < double_Pi; theta += step) {
 			xF = (x + radius * cos(theta));
 			yF = (y - radius * sin(theta));
 			if (bound(xF, yF)) {
