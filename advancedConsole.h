@@ -60,7 +60,7 @@ class adv {
 		ascii = false;
 		disableThreadSafety = false;
 
-		while (!ready) {
+		while (!ready && thread && run && uiloop.joinable() && console::ready) {
 			console::sleep(1);
 		}
 	}
