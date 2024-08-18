@@ -2,3 +2,4 @@
 *.gcf
 c port/
 New folder/
+.vscode/settings.json

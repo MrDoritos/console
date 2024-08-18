@@ -10,6 +10,7 @@
 #include <condition_variable>
 #include <cmath>
 #include <algorithm>
+#include <chrono>
 
 #include <string.h>
 
@@ -53,20 +54,42 @@ class adv {
 		drawingMode = 0;
 		doubleSize = false;
 		thread = true;
+		lastFrame = std::chrono::high_resolution_clock::time_point();
+		setFPS(60);
 		uiloop = std::thread(loop);
 		ascii = false;
 		disableThreadSafety = false;
+
+		while (!ready) {
+			console::sleep(1);
+		}
 	}
-	static void _advancedConsoleDestruct() {	
-		if (!ready)
+	static void _advancedConsoleDestruct() {
+		//fprintf(stderr, "Destructing advanced console\n");
+
+		if (!ready) {
+			//fprintf(stderr, "Advanced console is not ready\n");
 			return;
+		}
+
 		ready = false;
 		run = false;
-		if (uiloop.joinable()) {
+		cvThreadState.notify_all();
+		if (uiloop.joinable() || thread) {
+			//fprintf(stderr, "Joining drawing thread\n");
+			setThreadSafety(true);
 			setThreadState(true);
-			uiloop.join();
+			console::sleep(1);
+			cvThreadState.notify_all();
+			console::sleep(1);
+			if (thread && uiloop.joinable()) {
+				uiloop.join();
+			}
 		}
-		console::cons.~constructor();
+		//console::cons.~constructor();
+
+		cvThreadState.notify_all();
+		//fprintf(stderr, "Destructed\n");
 	}
 	
 	static void setDoubleWidth(bool w) {
@@ -122,21 +145,32 @@ class adv {
 		return (fb != nullptr && cb != nullptr);
 		*/
 	}
+
+	static void setFPS(float fps) {
+		setFrametime(1000.0f / fps);
+	}
+
+	static void setFrametime(float ft) {
+		frametime = ft;
+	}
 		
 	static void loop() {		
+		//printf("Entering draw loop\n");
 		{
-		std::lock_guard<std::mutex> lk(startLock);
-		
-		while (!console::ready) 
-			console::sleep(50);
-		
-		if (!allocate())
-			error("Could not allocate a framebuffer or color buffer");
-		
-		int c;
-		
-		ready = true;
+			std::lock_guard<std::mutex> lk(startLock);
+			
+			while (!console::ready) 
+				console::sleep(50);
+			
+			if (!allocate())
+				error("Could not allocate a framebuffer or color buffer");
+			
+			int c;
+			
+			ready = true;
 		}
+
+		//printf("Starting draw loop\n");
 		cvStart.notify_all();
 		
 		thread = true;
@@ -156,22 +190,38 @@ class adv {
 			
 			//condition:;
 			
-			while (!modify && thread)
+			waitForReadyFrame();
+
+			
+
+			//while (!modify && thread)
 				//console::sleep(33); //~30 fps
-				console::sleep(16);
+			//	console::sleep(frametime); //16
 				//std::this_thread::yield();
 				//console::sleep(1);
 				
 			waitForThreadState();
 		}
 		
+		//printf("Exiting drawing thread\n");
 		thread = false;
 	}
 	
+	static void waitForReadyFrame() {
+		std::chrono::duration<double, std::micro> ft(frametime * 1000.0f - 80.0f);
+		std::chrono::time_point<std::chrono::high_resolution_clock> now = std::chrono::high_resolution_clock::now();
+		std::chrono::duration<double, std::micro> diff = now - lastFrame;
+		if (diff < ft) {
+			//std::this_thread::sleep_for(ft - diff);
+			std::this_thread::sleep_until(lastFrame + ft);
+		}
+		lastFrame = std::chrono::high_resolution_clock::now();
+	}
+
 	static void waitForThreadState() {
 		if (thread)
 			return; //No wait
-		while (!thread) { //Wait for the drawing thread to be started again
+		while (!thread && run) { //Wait for the drawing thread to be started again
 			std::unique_lock<std::mutex> lk(threadStateMux);
 			cvThreadState.wait(lk);
 		}
@@ -761,6 +811,8 @@ class adv {
 	
 	static int width;
 	static int height;
+	static float frametime;
+	static std::chrono::time_point<std::chrono::high_resolution_clock> lastFrame;
 	
 	static wchar_t* fb;
 	static wchar_t* oldfb;

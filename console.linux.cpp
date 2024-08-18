@@ -3,10 +3,11 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <ncursesw/ncurses.h>
-#include <console.h>
 #include <sys/ioctl.h>
 #include <string>
 #include <string.h>
+
+#include "console.h"
 
 //Define constructor
 console::constructor console::cons;

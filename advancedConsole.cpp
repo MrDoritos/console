@@ -10,8 +10,6 @@ adv::_constructor::~_constructor() {
 
 void adv::error(char* err) {
 	_advancedConsoleDestruct();
-	while (console::ready) 
-		console::sleep(50); //wait for destruct
 	printf("Error: %s\r\n", err);
 	exit(1);
 }
@@ -41,3 +39,5 @@ std::condition_variable adv::cvStart;
 std::mutex adv::startLock;
 std::condition_variable adv::cvThreadState;
 std::mutex adv::threadStateMux;
+float adv::frametime;
+std::chrono::time_point<std::chrono::high_resolution_clock> adv::lastFrame;
