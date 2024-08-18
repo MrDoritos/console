@@ -1,6 +1,7 @@
 #include "advancedConsole.h"
 #include <unistd.h>
 
+/*
 int main() {
     std::chrono::time_point<std::chrono::high_resolution_clock> start = std::chrono::high_resolution_clock::now();
     adv::setFrametime(100.0f);
@@ -10,4 +11,10 @@ int main() {
         adv::write(0,0,str.c_str());
         usleep(1);
     }
+}
+*/
+
+int main() {
+    adv::write(0,0,"Press 'q' to quit");
+    while (!HASKEY(console::readKey(), 'q'));
 }

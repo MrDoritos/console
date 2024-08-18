@@ -12,7 +12,7 @@ int main() {
   console::write(0,1,"Green on black!", FGREEN | BBLACK);
   console::write(0,2,"Press ESC to exit", FRED | BBLUE);
   
-  while (console::readKey() != 27);
+  while (console::readKey() != VK_ESCAPE);
   
   return 0;
 }
@@ -26,10 +26,7 @@ If you would like something a little more advanced just do <br />
 ```
 #include "advancedConsole.h"
 
-int main() {
-  while (!adv::ready)
-    console::sleep(50); //Wait for the drawing thread to initialize. It isn't necessary at all and can be omitted
-    
+int main() {    
    adv::setDrawingMode(DRAWINGMODE_COMPARE); //Set only new pixels instead of uploading all of the buffer
    adv::setDoubleWidth(true); //Useful for consoles that lack 1:1 aspect ratio fonts, not very useful for text
    adv::setThreadState(false); //Pause the drawing thread, good for when you would prefer to call the draw function yourself
@@ -49,7 +46,7 @@ int main() {
     adv::circle(px, py, 5, ' ', BWHITE | FBLACK);
     adv::draw();
    
-   } while ((key = console::readKey()) != 27 && key != 'q');
+   } while ((key = console::readKey()) != VK_ESCAPE && key != 'q');
    
    return 0;
 }
