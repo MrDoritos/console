@@ -115,7 +115,10 @@ class adv {
 	}
 	
 	static void setThreadState(bool state) {
-		//std::lock_guard<std::mutex> lk(threadStateMux);
+		if (thread && !adv::ready) {
+			std::lock_guard<std::mutex> lk(startLock);
+		}
+		
 		thread = state; //Just pauses/unpauses the drawing thread
 		cvThreadState.notify_all();
 	}
