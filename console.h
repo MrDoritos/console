@@ -35,6 +35,7 @@ extern "C" {
 #define BMAGENTA	0b01010000
 #define BCYAN		0b01100000
 #define BWHITE		0b01110000
+#define BINST		0b10000000
 
 #define FBLACK		0b00000000
 #define FBLUE		0b00000001
@@ -44,6 +45,7 @@ extern "C" {
 #define FMAGENTA	0b00000101
 #define FCYAN		0b00000110
 #define FWHITE		0b00000111
+#define FINST		0b00001000	
 
 #define IMAGE_WINDOWS 0x01
 #define IMAGE_POSIX 0x02
