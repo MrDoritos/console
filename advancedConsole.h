@@ -94,8 +94,9 @@ class adv {
 	
 	static void setDoubleWidth(bool w) {
 		if (w) {
-			width = floor(console::getConsoleWidth() / 2.0f);
-			height = console::getConsoleHeight();
+			bufferWidth = console::getConsoleWidth();
+			width = bufferWidth / 2;
+			height = bufferHeight = console::getConsoleHeight();
 			if (!allocate(width, height)) {
 				error("Could not allocate new buffers for double width mode");
 			}
@@ -286,28 +287,39 @@ class adv {
 		if (!modify)
 			return;
 		
+		wchar_t *buffer = fb;
+		color_t *cbuffer = cb;
+		int length = width * height;
+
 		if (drawingMode == DRAWINGMODE_BASIC) {
 			if (doubleSize) {
-				wchar_t *buffer = (wchar_t*)alloca((width * 2) * height * sizeof(wchar_t));
-				color_t *cbuffer = (color_t*)alloca((width * 2) * height * sizeof(wchar_t));
-				for (int x = 0; x < width; x++) {
-					for (int y = 0; y < height; y++) {
-						 buffer[(y * width * 2) + (x * 2)]     = fb[get(x,y)];
-						 buffer[(y * width * 2) + (x * 2 + 1)] = fb[get(x,y)];
-						cbuffer[(y * width * 2) + (x * 2)]     = cb[get(x,y)];
-						cbuffer[(y * width * 2) + (x * 2 + 1)] = cb[get(x,y)];
+				length = bufferWidth * bufferHeight;
+				buffer = (wchar_t*)alloca(length * sizeof(wchar_t));
+				cbuffer = (color_t*)alloca(length * sizeof(color_t));
+				
+				for (int x = width * 2; x < bufferWidth; x++) {
+					for (int y = 0; y < bufferHeight; y++) {
+						buffer[y * bufferWidth + x] = L' ';
+					   cbuffer[y * bufferWidth + x] = FWHITE|BBLACK;
 					}
 				}
-				if (ascii)
-					writeAscii(&buffer[0], &cbuffer[0], (width * 2) * height);
-				else
-					console::write(&buffer[0], &cbuffer[0], (width * 2) * height);
-			} else {
-				if (ascii)
-					writeAscii(fb, cb, width * height);
-				else
-					console::write(fb, cb, width * height);
+
+				for (int x = 0; x < width; x++) {
+					for (int y = 0; y < height; y++) {
+						int db_offset = y * bufferWidth + x * 2;
+						int fb_offset = get(x,y);
+						buffer[db_offset]     = fb[fb_offset];
+						buffer[db_offset + 1] = fb[fb_offset];
+					   cbuffer[db_offset]     = cb[fb_offset];
+					   cbuffer[db_offset + 1] = cb[fb_offset];
+					}
+				}
 			}
+
+			if (ascii)
+				writeAscii(buffer, cbuffer, length);
+			else
+				console::write(buffer, cbuffer, length);
 		}
 		
 		if (drawingMode == DRAWINGMODE_COMPARE)
@@ -814,6 +826,9 @@ class adv {
 	
 	static int width;
 	static int height;
+	static int bufferWidth;
+	static int bufferHeight;
+
 	static float frametime;
 	static std::chrono::time_point<std::chrono::high_resolution_clock> lastFrame;
 	

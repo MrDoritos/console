@@ -27,6 +27,8 @@ bool adv::ready;
 bool adv::modify;
 int adv::width;
 int adv::height;
+int adv::bufferWidth;
+int adv::bufferHeight;
 wchar_t* adv::fb;
 wchar_t* adv::oldfb;
 color_t* adv::cb;
