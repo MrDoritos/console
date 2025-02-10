@@ -60,23 +60,22 @@ class adv {
 		ascii = false;
 		disableThreadSafety = false;
 
+		if (!allocate())
+			error("Could not allocate a framebuffer or color buffer");
+		
 		while (!ready && thread && run && uiloop.joinable() && console::ready) {
 			console::sleep(1);
 		}
 	}
 	static void _advancedConsoleDestruct() {
-		//fprintf(stderr, "Destructing advanced console\n");
-
-		if (!ready) {
-			//fprintf(stderr, "Advanced console is not ready\n");
+		if (!ready)
 			return;
-		}
 
 		ready = false;
 		run = false;
 		cvThreadState.notify_all();
+
 		if (uiloop.joinable() || thread) {
-			//fprintf(stderr, "Joining drawing thread\n");
 			setThreadSafety(true);
 			setThreadState(true);
 			console::sleep(1);
@@ -86,29 +85,25 @@ class adv {
 				uiloop.join();
 			}
 		}
+		
 		//console::cons.~constructor();
 
 		cvThreadState.notify_all();
-		//fprintf(stderr, "Destructed\n");
+		deallocate();
 	}
 	
 	static void setDoubleWidth(bool w) {
-		if (w) {
-			bufferWidth = console::getConsoleWidth();
+		width = bufferWidth = console::getConsoleWidth();
+		height = bufferHeight = console::getConsoleHeight();
+
+		if (w)
 			width = bufferWidth / 2;
-			height = bufferHeight = console::getConsoleHeight();
-			if (!allocate(width, height)) {
-				error("Could not allocate new buffers for double width mode");
-			}
-			doubleSize = true;
-			clear();
-		} else {
-			if (!allocate()) {
-				error("Could not allocate new buffers for single width mode");
-			}
-			doubleSize = false;
-			clear();
-		}
+
+		if (!allocate(width, height))
+			error("Could not reallocate buffers");
+
+		doubleSize = w;
+		clear();
 	}
 	
 	static void setThreadSafety(bool state) {
@@ -123,31 +118,51 @@ class adv {
 		thread = state; //Just pauses/unpauses the drawing thread
 		cvThreadState.notify_all();
 	}
+
+	static void deallocate() {
+		if (fb)
+			delete [] fb;
+		if (cb)
+			delete [] cb;
+		if (oldfb)
+			delete [] oldfb;
+		if (oldcb)
+			delete [] oldcb;
+
+		fb = nullptr;
+		cb = nullptr;
+		oldfb = nullptr;
+		oldcb = nullptr;
+	}
 	
 	static bool allocate(int width, int height) {
-		fb = new wchar_t[width * height];
-		cb = new color_t[width * height];
+		deallocate();
+
+		int length = width * height;
+
+		fb = new wchar_t[length];
+		cb = new color_t[length];
+
+		if (!fb || !cb)
+			return false;
+
 		if (drawingMode == DRAWINGMODE_COMPARE) {
-			oldfb = new wchar_t[width * height];
-			oldcb = new color_t[width * height];
+			oldfb = new wchar_t[length];
+			oldcb = new color_t[length];
+
 			if (!oldfb || !oldcb)
 				return false;
 		}
-		if (!fb || !cb)
-			return false;
+
 		clear();
+
 		return true;
 	}
 	
 	static bool allocate() {
-		width = console::getConsoleWidth(), height = console::getConsoleHeight();
+		width = console::getConsoleWidth();
+		height = console::getConsoleHeight();
 		return allocate(width, height);
-		/*
-		fb = new wchar_t[width * height];
-		cb = new char[width * height];
-		clear();
-		return (fb != nullptr && cb != nullptr);
-		*/
 	}
 
 	static void setFPS(float fps) {
@@ -159,55 +174,29 @@ class adv {
 	}
 		
 	static void loop() {		
-		//printf("Entering draw loop\n");
 		{
 			std::lock_guard<std::mutex> lk(startLock);
 			
 			while (!console::ready) 
 				console::sleep(50);
 			
-			if (!allocate())
-				error("Could not allocate a framebuffer or color buffer");
-			
 			int c;
 			
 			ready = true;
 		}
 
-		//printf("Starting draw loop\n");
 		cvStart.notify_all();
 		
 		thread = true;
 		
 		while (run) {
-			//Other threads can read keys, not this one
-			
-			//Operate on the buffers
-			{
-				//std::lock_guard<std::mutex> lk(buffers); //obtain lock on the buffers
-				//if (!modify)
-				//	goto condition;
-				//console::write(fb, cb, width * height);
-				draw();
-				//modify = false;
-			}
-			
-			//condition:;
+			draw();
 			
 			waitForReadyFrame();
 
-			
-
-			//while (!modify && thread)
-				//console::sleep(33); //~30 fps
-			//	console::sleep(frametime); //16
-				//std::this_thread::yield();
-				//console::sleep(1);
-				
 			waitForThreadState();
 		}
 		
-		//printf("Exiting drawing thread\n");
 		thread = false;
 	}
 	
