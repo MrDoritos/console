@@ -56,13 +56,19 @@ class adv {
 		thread = true;
 		lastFrame = std::chrono::high_resolution_clock::time_point();
 		setFPS(60);
-		uiloop = std::thread(loop);
 		ascii = false;
 		disableThreadSafety = false;
+
+		fb = nullptr;
+		cb = nullptr;
+		oldfb = nullptr;
+		oldcb = nullptr;
 
 		if (!allocate())
 			error("Could not allocate a framebuffer or color buffer");
 		
+		uiloop = std::thread(loop);
+
 		while (!ready && thread && run && uiloop.joinable() && console::ready) {
 			console::sleep(1);
 		}
@@ -106,6 +112,18 @@ class adv {
 		clear();
 	}
 	
+	static bool isNewSize() {
+		int consoleWidth = console::getConsoleWidth();
+		int consoleHeight = console::getConsoleHeight();
+
+		if (consoleWidth != bufferWidth || consoleHeight != bufferHeight) {
+			setDoubleWidth(doubleSize);
+			return true;
+		}
+
+		return false;
+	}
+
 	static void setThreadSafety(bool state) {
 		disableThreadSafety = !state;
 	}
@@ -160,8 +178,8 @@ class adv {
 	}
 	
 	static bool allocate() {
-		width = console::getConsoleWidth();
-		height = console::getConsoleHeight();
+		bufferWidth = width = console::getConsoleWidth();
+		bufferHeight = height = console::getConsoleHeight();
 		return allocate(width, height);
 	}
 
