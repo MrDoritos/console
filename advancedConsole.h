@@ -222,6 +222,7 @@ class adv {
 		std::chrono::duration<double, std::micro> ft(frametime * 1000.0f - 80.0f);
 		std::chrono::time_point<std::chrono::high_resolution_clock> now = std::chrono::high_resolution_clock::now();
 		std::chrono::duration<double, std::micro> diff = now - lastFrame;
+		deltaTime = diff.count() / 1000.0f;
 		if (diff < ft) {
 			//std::this_thread::sleep_for(ft - diff);
 			std::this_thread::sleep_until(lastFrame + ft);
@@ -838,6 +839,7 @@ class adv {
 
 	static float frametime;
 	static std::chrono::time_point<std::chrono::high_resolution_clock> lastFrame;
+	static float deltaTime;
 	
 	static wchar_t* fb;
 	static wchar_t* oldfb;

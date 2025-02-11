@@ -43,3 +43,4 @@ std::condition_variable adv::cvThreadState;
 std::mutex adv::threadStateMux;
 float adv::frametime;
 std::chrono::time_point<std::chrono::high_resolution_clock> adv::lastFrame;
+float adv::deltaTime;
