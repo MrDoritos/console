@@ -1,3 +1,4 @@
+*.o
 *.exe
 *.gcf
 c port/
