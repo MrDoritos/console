@@ -14,17 +14,18 @@ int main() {
 	char cur = buffer[0];
 	int i = 0;	
 	int cwidth = console::getConsoleWidth(), cheight = console::getConsoleHeight();
-	
-	for (i = 0; i < 256; i++) {
-		console::write(i % cwidth, (i / cwidth) % cheight, '#', (i % 16) | ((((i) / 16) % 16) << 4));
-	}
-	
-	for (i = 0; i < 256; i++) {
-		console::write(i % cwidth, ((i / cwidth) + 20) % cheight, '*', (i % 16) | (((i / 16) % 16) << 4));
-	}
 
+	int ypos = 1;
+	for (i = 0; i < 256; i++) {
+		console::write(i % cwidth, (i / cwidth + ypos) % cheight, '#', (i % 16) | ((((i) / 16) % 16) << 4));
+	}
+	ypos += (256 / cwidth) + 2;
+	for (i = 0; i < 256; i++) {
+		console::write(i % cwidth, (i / cwidth + ypos) % cheight, '*', (i % 16) | (((i / 16) % 16) << 4));
+	}
+	ypos += (256 / cwidth) + 2;
 	for (i = 0; i < 64; i++) {
-		console::write(i % cwidth, ((i / cwidth) + 30) % cheight, L'░', i << 4);
+		console::write(i % cwidth, (i / cwidth + ypos) % cheight, L'░', i << 4);
 	}
 	
 	console::readKey();
