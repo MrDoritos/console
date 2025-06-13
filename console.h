@@ -68,11 +68,8 @@ extern "C" {
 #define VK_END KEY_END
 #define VK_INSERT KEY_IC
 
-#define VK_BACKSPACE 263 //Holy fuck ncurses is such a shit library. Truely proprietary shit tier
-	//KEY_BACKSPACE
-	//238
-	//127
-	//'\b'
+#define VK_BACKSPACE 263 
+
 #elif defined __WIN32
 #define VK_BACKSPACE VK_BACK
 #endif
