@@ -107,7 +107,7 @@ console::constructor::~constructor() {
     ready = false;
     already_constructed = false;
 
-    setLineBuffering(true);
+    //setLineBuffering(true);
 
     tcsetattr(STDIN_FILENO, TCSANOW, &termios_start);
 
@@ -115,6 +115,11 @@ console::constructor::~constructor() {
 
     if (reset_text_mode_by_default)
         setModes(0); // Probably want this as default as well..?
+
+    //fflush(stdin);
+    //fflush(stdout);
+    tcflush(STDIN_FILENO, TCIFLUSH);  // -> ioctl(STDIN_FILENO, TCFLSH, TCIFLUSH)
+    tcflush(STDOUT_FILENO, TCOFLUSH); // -> ioctl(STDOUT_FILENO, TCFLSH, TCOFLUSH)
 
     disableAlternateBuffer(); // Probably want this?
 }
@@ -448,7 +453,7 @@ inline void setDEC(const int &code, const bool &state) {
 inline void setLineBuffering(const bool &state) {
     termios c;
     memcpy(&c, &termios_start, sizeof(termios));
-    c.c_lflag &= (~ICANON | ~ECHO);
+    c.c_lflag &= ~(ICANON | ECHO);
     if (state)
         c.c_lflag |= (ICANON | ECHO);
     tcsetattr(STDIN_FILENO, TCSANOW, &c);
