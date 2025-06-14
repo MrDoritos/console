@@ -16,7 +16,7 @@
 
 #ifdef __linux__
 //#include <curses.h>
-#include <ncursesw/ncurses.h>
+//#include <ncursesw/ncurses.h>
 #endif
 
 #define DRAWINGMODE_BASIC 0
@@ -267,7 +267,7 @@ class adv {
 	static void drawCompare() {
 		//Since we refresh on every console::write I think we should have an automatic switch for linux
 		#ifdef __linux__
-		console::useRefresh = false;
+		//console::useRefresh = false;
 		#endif
 		for (int x = 0; x < width; x++) {
 			for (int y = 0; y < height; y++) {
@@ -284,8 +284,8 @@ class adv {
 			}
 		}
 		#ifdef __linux__
-		console::useRefresh = true;
-		refresh();
+		//console::useRefresh = true;
+		//refresh();
 		#endif
 	}
 	

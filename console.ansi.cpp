@@ -31,6 +31,7 @@ Questions for myself
 #include <cassert>
 #include <termios.h>
 #include <stdlib.h>
+#include <poll.h>
 
 #include "console.h"
 
@@ -44,6 +45,7 @@ bool console::ready = false;
     Not exposed by a header yet
 */
 bool activate_alternate_screen_by_default = true;
+bool activate_application_keys_by_default = true;
 bool reset_text_mode_by_default = true;
 bool is_cursor_visible = false;
 bool is_alternate_screen = false;
@@ -51,6 +53,7 @@ bool is_alternate_screen = false;
 bool is_standard_color_mode = true;
 // If true don't use terminal's default palette
 bool is_ansi_256_color_mode = true;
+bool is_application_keys = false;
 color_t active_foreground_color_mode = 0;
 color_t active_background_color_mode = 0;
 termios termios_start;
@@ -61,12 +64,40 @@ inline void setDEC(const int &code, const bool &state);
 inline void toggleAlternateBuffer();
 inline void enableAlternateBuffer();
 inline void disableAlternateBuffer();
+inline int fromApplicationKey(const char *buf, const int &len, int &consumed);
+inline int fromEscapeCode(const char *buf, const int &len, int &consumed);
+inline int fromTTYInput(const char *buf, const int &len, int &consumed);
 
 template<typename... Modes>
 inline void setModes(const Modes ...modes);
 
+// Temporary
+#define VK_DOWN 402
+#define VK_UP 403
+#define VK_LEFT 404
+#define VK_RIGHT 405
+#define VK_HOME 406
+#define VK_END 550
+#define VK_INSERT 513
+#define VK_DELETE 0
+#define VK_FN1 0
+#define VK_FN2 0
+#define VK_FN3 0
+#define VK_FN4 0
+#define VK_NUMPAD0 410
+#define VK_NUMPAD1 411
+#define VK_NUMPAD2 412
+#define VK_NUMPAD3 413
+#define VK_NUMPAD4 414
+#define VK_NUMPAD5 415
+#define VK_NUMPAD6 416
+#define VK_NUMPAD7 417
+#define VK_NUMPAD8 418
+#define VK_NUMPAD9 419
+
 namespace DEC_CODES {
     enum Codes {
+        APPLICATION_KEYS = 1,
         CURSOR_VISIBILITY = 25,
         SAVE_RESTORE_SCREEN = 47,
         REPORT_MOUSE_PRESS_RELEASE = 1000,
@@ -86,6 +117,7 @@ console::constructor::constructor() {
         setModes(0); // Reset modes
 
     setDEC(DEC_CODES::CURSOR_VISIBILITY, false);
+    setDEC(DEC_CODES::APPLICATION_KEYS, true);
 
     tcgetattr(STDIN_FILENO, &termios_start);
 
@@ -102,6 +134,7 @@ console::constructor::~constructor() {
     tcsetattr(STDIN_FILENO, TCSANOW, &termios_start);
 
     setDEC(DEC_CODES::CURSOR_VISIBILITY, true);
+    setDEC(DEC_CODES::APPLICATION_KEYS, false);
 
     if (reset_text_mode_by_default)
         setModes(0); // Probably want this as default as well..?
@@ -504,23 +537,78 @@ void console::setCursorPosition(int x, int y) {
     writeString("\x1b[" + std::to_string(y+1) + ";" + std::to_string(x+1) + "H");
 }
 
-int readInput() {
+inline int fromApplicationKey(const char *buf, const int &len, int &consumed) {
+    assert(len > 2 && "Need more characters");
+
+    consumed++;
+
+    switch (buf[2]) {
+        case 'm': return '-';
+        case 'l': return ',';
+        case '.': return '.';
+        case 'M': return '\n';
+        case 'P': return VK_FN1;
+        case 'Q': return VK_FN2;
+        case 'R': return VK_FN3;
+        case 'S': return VK_FN4;
+        case 'p': return VK_NUMPAD0;
+        case 'q': return VK_NUMPAD1;
+        case 'r': return VK_NUMPAD2;
+        case 's': return VK_NUMPAD3;
+        case 't': return VK_NUMPAD4;
+        case 'u': return VK_NUMPAD5;
+        case 'v': return VK_NUMPAD6;
+        case 'w': return VK_NUMPAD7;
+        case 'x': return VK_NUMPAD8;
+        case 'y': return VK_NUMPAD9;
+        default: return fromEscapeCode(buf+1,len-1,--consumed);
+    }
+}
+
+inline int fromEscapeCode(const char *buf, const int &len, int &consumed) {
+    if (len == 1)
+        return VK_ESCAPE;
+
+    consumed++;
+
+    if (buf[1] == 'O' && is_application_keys)
+        return fromApplicationKey(buf, len, consumed);
+
+    switch (buf[1]) {
+        case 'A': return VK_UP;
+        case 'B': return VK_DOWN;
+        case 'C': return VK_RIGHT;
+        case 'D': return VK_LEFT;
+        case 'M': return VK_ENTER;
+        default: return buf[1];
+    }
+}
+
+inline int fromTTYInput(const char *buf, const int &len, int &consumed) {
+    assert(len > 0 && "Length is 0 or invalid");
+
+    consumed = 1;
+
+    if (*buf == '\x1b')
+        return fromEscapeCode(buf, len, consumed);
+
+    return *buf;
+}
+
+inline int readInput(const int &buflen = 1) {
     /*
-        This is not a good plan
-        Use poll and O_NONBLOCK
-        Do not expect single byte input    
+        It appears that usually a full escape sequence will report if one is present
     */
 
-    int error;
+    int error, consumed;
 
-    const int buflen = 1;
     char buf[buflen];
 
     error = read(STDIN_FILENO, buf, buflen);
 
     assert(error != -1 && "Not sure how common read failure is");
 
-    return int(buf[0]);
+    return fromTTYInput(buf, buflen, consumed);
 }
 
 int console::readKey() {
@@ -540,7 +628,12 @@ int console::readKey() {
         In that case, we should process escape codes
     */ 
 
-    return readInput();
+    pollfd pfd = {};
+    pfd.fd = STDIN_FILENO;
+    pfd.events = POLLIN;
+    poll(&pfd, 1, -1);
+
+    return readKeyAsync();
 }
 
 int console::readKeyAsync() {
@@ -558,7 +651,7 @@ int console::readKeyAsync() {
     if (count < 1)
         return 0;
 
-    return readInput();
+    return readInput(count);
 }
 
 inline void setForegroundMode(const color_t &fg_mode) {
@@ -759,6 +852,10 @@ void console::write(char *fb, color_t *cb, int length) {
     color_t fg_mode, bg_mode, fg, bg;
     int offset = 0;
 
+    // To-Do Fix
+    strcpy(buf, "\x1b[H");
+    offset += 3;
+    
     // Should be the right color conversion eventually
     toAnsiColorMode(*cb, fg_mode, bg_mode);
     for (int i = 0; i < length; i++) {
@@ -788,6 +885,10 @@ void console::write(wchar_t *fb, color_t *cb, int length) {
     char utf8buf[4], buf[buflen];
     color_t fg_mode, bg_mode, fg, bg;
     int offset = 0;
+
+    // To-Do Fix
+    strcpy(buf, "\x1b[H");
+    offset += 3;
 
     toAnsiColorMode(*cb, fg_mode, bg_mode);
     for (int i = 0; i < length; i++) {
