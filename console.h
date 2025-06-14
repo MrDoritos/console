@@ -3,26 +3,19 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <iostream>
-#define NO_KEY EOF
 
-#if defined __WIN32 || _WIN32
-#define __WIN32
-#define _WIN32
+#if defined(__linux__) || defined(__unix__) || (defined(__APPLE__) && defined(__MACH__))
+#define POSIX_COMP 
+#endif
+#if defined(__WIN32) || defined(_WIN32) || defined(__MINGW32__) || defined(__MINGW64__)
+#define WIN_COMP
+#endif
+
+#if defined(WIN_COMP)
 #include <Windows.h>
-//#include <console.windows.h>
-
-#if defined DLLEXPORT
-#define CONSOLE __declspec(dllexport)
-//#define CONSOLECALL __cdecl
-#define CONSOLECALL __stdcall
-
-extern "C" {
-#else
 #define CONSOLE
 #define CONSOLECALL
-#endif
-#elif defined __linux__
-//#include <console.linux.h>
+#elif defined(POSIX_COMP)
 #define CONSOLE
 #define CONSOLECALL
 #endif
@@ -51,7 +44,7 @@ extern "C" {
 #define IMAGE_POSIX 0x02
 #define IMAGE_LINUX IMAGE_POSIX
 
-#ifndef __WIN32
+#if defined(POSIX_COMP)
 #define VK_ESCAPE 27
 #define VK_RETURN '\n' //On windows this would be the carriage return instead
 #define VK_DELETE KEY_DELETE
@@ -69,12 +62,14 @@ extern "C" {
 #define VK_INSERT KEY_IC
 
 #define VK_BACKSPACE 263 
+#endif
 
-#elif defined __WIN32
+#if defined(WIN_COMP)
 #define VK_BACKSPACE VK_BACK
 #endif
 
 #define VK_ENTER VK_RETURN
+#define NO_KEY EOF
 
 #define __CTRL (0x08 << 24)
 #define __NMLK (0x20 << 24)
@@ -122,7 +117,7 @@ class console {
 	
 	private:
 	CONSOLE static color_t _activeColor;
-	#if defined __WIN32
+	#if defined(WIN_COMP)
 	public:
 	CONSOLE static void CONSOLECALL write(CHAR_INFO* fb, int length);
 	CONSOLE static HANDLE conHandle;
@@ -130,14 +125,10 @@ class console {
 	CONSOLE static HANDLE ogConHandle;
 	CONSOLE static color_t CONSOLECALL _getCharInfoColor(color_t color);
 	private:
-	#elif defined __linux__	
+	#elif defined(POSIX_COMP)	
 	static void _refreshSize();
 	static struct winsize w;
 	public:
 	static bool useRefresh;
 	#endif
 };
-
-#if (defined __WIN32 && defined DLLEXPORT)
-}	
-#endif
