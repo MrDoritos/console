@@ -404,17 +404,17 @@ inline winsize getWinSize() {
 }
 
 inline void writeChar(const char &ch) {
-    write(STDOUT_FILENO, &ch, 1);
+    int e = write(STDOUT_FILENO, &ch, 1);
 }
 
 inline void writeWChar(const wchar_t &wch) {
     int output_length;
     int c = getUTF8char(wch, output_length);
-    write(STDOUT_FILENO, &c, output_length);
+    int e = write(STDOUT_FILENO, &c, output_length);
 }
 
 inline void writeCharString(const char *str) {
-    write(STDOUT_FILENO, str, strlen(str));
+    int e = write(STDOUT_FILENO, str, strlen(str));
 }
 
 inline void writeWCharString(const wchar_t *wstr) {
@@ -422,18 +422,18 @@ inline void writeWCharString(const wchar_t *wstr) {
     const int buflen = wstrlen * 3;
     char buf[buflen];
     int count = toUTF8Str(wstr, wstrlen, buf, buflen);
-    write(STDOUT_FILENO, buf, count);
+    int e = write(STDOUT_FILENO, buf, count);
 }
 
 inline void writeString(const std::string &str) {
-    write(STDOUT_FILENO, str.c_str(), str.size());
+    int e = write(STDOUT_FILENO, str.c_str(), str.size());
 }
 
 inline void writeWString(const std::wstring &str) {
     const int buflen = str.size() * 4;
     char buf[buflen];
     int count = toUTF8Str(str.data(), str.size(), buf, buflen);
-    write(STDOUT_FILENO, buf, count);
+    int e = write(STDOUT_FILENO, buf, count);
 }
 
 inline void setDEC(const int &code, const bool &state) {
@@ -586,6 +586,58 @@ inline void setModes(const Modes... modes) {
 }
 
 /*
+    We have to do this to compose a buffer, for now
+*/
+template<typename ...Modes>
+inline std::string getModesStr(const Modes... modes) {
+    std::string p = "\x1b[";
+
+    ((p += std::to_string(modes), p += ";"), ...);
+    if (sizeof...(modes) > 0 && p.back() == ';')
+        p.pop_back();
+    
+    p += "m";
+    return p;
+}
+
+namespace CB_OPTS {
+    enum Types {
+        NONE=0,
+        FG=1,
+        BG=2,
+        BOTH=3
+    };
+};
+
+inline std::string getConsoleColorRGBStr(const color_t &r, const color_t &g, const color_t &b, const bool &bg = false) {
+    return getModesStr(bg * 10 + 38, 2, r, g, b);
+}
+
+inline std::string getConsoleColorAnsi256Str(const color_t &color, const CB_OPTS::Types &opts = CB_OPTS::BOTH) {
+    color_t fg_mode, bg_mode;
+    toAnsi256ColorMode(color, fg_mode, bg_mode);
+    switch (opts) {
+        case CB_OPTS::FG: return getModesStr(38, 5, fg_mode);
+        case CB_OPTS::BG: return getModesStr(48, 5, bg_mode);
+        case CB_OPTS::BOTH: return getModesStr(38, 5, fg_mode, 48, 5, bg_mode);
+        default: return "";
+    }
+}
+
+inline std::string getConsoleColorStr(const color_t &color, const CB_OPTS::Types &opts = CB_OPTS::BOTH) {
+    if (is_ansi_256_color_mode)
+        return getConsoleColorAnsi256Str(color);
+    color_t fg_mode, bg_mode;
+    toAnsiColorMode(color, fg_mode, bg_mode);
+    switch (opts) {
+        case CB_OPTS::BG: return getModesStr(2, fg_mode);
+        case CB_OPTS::FG: return getModesStr(1, bg_mode);
+        case CB_OPTS::BOTH: return getModesStr(2, fg_mode, 1, bg_mode);
+        default: return "";
+    }
+}
+
+/*
     Doesn't check if mode is set already, since this is big data
     Handle going back to normal characters somehow
 */
@@ -647,17 +699,57 @@ void console::write(int x, int y, std::string &str, color_t c) {
 }
 
 void console::write(char *fb, color_t *cb, int length) {
+    std::string buf;
+    color_t fg_mode, bg_mode, fg, bg;
+
+    // Should be the right color conversion eventually
+    toAnsiColorMode(*cb, fg_mode, bg_mode);
     for (int i = 0; i < length; i++) {
-        setConsoleColor(cb[i]);
-        writeChar(fb[i]);
+        const char ch = fb[i];
+        const color_t color = cb[i];
+        
+        toAnsiColorMode(color, fg, bg);
+
+        CB_OPTS::Types mode = CB_OPTS::Types((fg_mode == fg ? 1 : 0) | (bg_mode == bg ? 2 : 0));
+
+        buf += getConsoleColorStr(color, mode);
+        buf += ch;
+
+        fg_mode = fg, bg_mode = bg;
+        
+        //setConsoleColor(cb[i]);
+        //writeChar(fb[i]);
     }
+
+    writeString(buf);
 }
 
 void console::write(wchar_t *fb, color_t *cb, int length) {
+    std::string buf;
+    color_t fg_mode, bg_mode, fg, bg;
+    char utf8buf[4];
+
+    toAnsiColorMode(*cb, fg_mode, bg_mode);
     for (int i = 0; i < length; i++) {
-        setConsoleColor(cb[i]);
-        writeChar(fb[i]);
+        const wchar_t ch = fb[i];
+        const color_t color = cb[i];
+        
+        toAnsiColorMode(color, fg, bg);
+
+        CB_OPTS::Types mode = CB_OPTS::Types((fg_mode == fg ? 1 : 0) | (bg_mode == bg ? 2 : 0));
+
+        int len = toUTF8Str(&ch, 1, utf8buf, 4);
+
+        buf += getConsoleColorStr(color, mode);
+        buf += std::string(buf, len);
+
+        fg_mode = fg, bg_mode = bg;
+
+        //setConsoleColor(cb[i]);
+        //writeWChar(fb[i]);
     }
+
+    writeString(buf);
 }
 
 void console::write(int x, int y, wchar_t character) {
