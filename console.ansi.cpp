@@ -31,6 +31,7 @@ Questions for myself
 #include <string.h>
 #include <cassert>
 #include <termios.h>
+#include <stdlib.h>
 
 #include "console.h"
 
@@ -93,7 +94,7 @@ console::constructor::constructor() {
 
     tcgetattr(STDIN_FILENO, &termios_start);
 
-    setLineBuffering(true);
+    setLineBuffering(false);
 
     ready = true;
     already_constructed = true;
@@ -106,7 +107,7 @@ console::constructor::~constructor() {
     ready = false;
     already_constructed = false;
 
-    setLineBuffering(false);
+    setLineBuffering(true);
 
     tcsetattr(STDIN_FILENO, TCSANOW, &termios_start);
 
@@ -403,6 +404,10 @@ inline winsize getWinSize() {
     return ws;
 }
 
+inline void writeBuffer(const char *buf, const int &length) {
+    int e = write(STDOUT_FILENO, buf, length);
+}
+
 inline void writeChar(const char &ch) {
     int e = write(STDOUT_FILENO, &ch, 1);
 }
@@ -588,16 +593,71 @@ inline void setModes(const Modes... modes) {
 /*
     We have to do this to compose a buffer, for now
 */
-template<typename ...Modes>
-inline std::string getModesStr(const Modes... modes) {
-    std::string p = "\x1b[";
+constexpr inline int get_digit_count(const int &val, const int &base = 10) {
+    int i = 1, w = val / base;
+    for (;w;w/=base,i++);
+    return i;
+}
 
-    ((p += std::to_string(modes), p += ";"), ...);
-    if (sizeof...(modes) > 0 && p.back() == ';')
-        p.pop_back();
+inline char *get_itoa(const int &val, char *buf, const int &base = 10) {
+    const int sign = val < 0 ? 1 : 0;
+    const int l = get_digit_count(val, base) + sign;
+
+    int w = sign ? -val : val, i = l;
+    buf[0] = sign ? '-' : '0';
     
-    p += "m";
-    return p;
+    for (;w&&i;--i,w/=base)
+        buf[i-1] = "0123456789ABCDEF"[w%base];
+
+    buf[l] = 0;
+    return buf;
+}
+
+template<typename T>
+inline void getModesStrR(char *buf, int &index, const int &length, const T &value) {
+    const int sign = value < 0 ? 1 : 0;
+    const int l = get_digit_count(value) + sign;
+
+    if (index + l + 1 > length)
+        return;
+
+    get_itoa(value, buf + index);
+    index += l;
+
+    if (index + 1 > length)
+        return;
+
+    buf[index++] = ';';
+}
+
+template<typename T, typename ...Modes>
+inline void getModesStrR(char *buf, int &index, const int &length, const T &value, const Modes&... modes) {
+    getModesStrR(buf, index, length, value);
+    getModesStrR(buf, index, length, modes...);
+}
+
+template<typename T, typename ...Modes>
+inline int getModesStr(char *buf, const int &length, const T &value, const Modes&... modes) {
+    const char *OSC = "\x1b[";
+    const int OSClen = strlen(OSC);
+
+    if (OSClen + 1 > length)
+        return 0;
+
+    strcpy(buf, OSC);
+    int i = OSClen;
+
+    getModesStrR(buf, i, length, value, modes...);
+
+    if (i + 1 > length) {
+        buf[length-1] = 0;
+        return i;
+    }
+
+    buf[i - 1] = 'm';
+    buf[i] = 0;
+
+    return i + 1;
 }
 
 namespace CB_OPTS {
@@ -609,31 +669,31 @@ namespace CB_OPTS {
     };
 };
 
-inline std::string getConsoleColorRGBStr(const color_t &r, const color_t &g, const color_t &b, const bool &bg = false) {
-    return getModesStr(bg * 10 + 38, 2, r, g, b);
+inline int getConsoleColorRGBStr(char *buf, const int &length, const color_t &r, const color_t &g, const color_t &b, const bool &bg = false) {
+    return getModesStr(buf, length, bg * 10 + 38, 2, r, g, b);
 }
 
-inline std::string getConsoleColorAnsi256Str(const color_t &color, const CB_OPTS::Types &opts = CB_OPTS::BOTH) {
+inline int getConsoleColorAnsi256Str(char *buf, const int &length, const color_t &color, const CB_OPTS::Types &opts = CB_OPTS::BOTH) {
     color_t fg_mode, bg_mode;
     toAnsi256ColorMode(color, fg_mode, bg_mode);
     switch (opts) {
-        case CB_OPTS::FG: return getModesStr(38, 5, fg_mode);
-        case CB_OPTS::BG: return getModesStr(48, 5, bg_mode);
-        case CB_OPTS::BOTH: return getModesStr(38, 5, fg_mode, 48, 5, bg_mode);
-        default: return "";
+        case CB_OPTS::FG: return getModesStr(buf, length, 38, 5, fg_mode);
+        case CB_OPTS::BG: return getModesStr(buf, length, 48, 5, bg_mode);
+        case CB_OPTS::BOTH: return getModesStr(buf, length, 38, 5, fg_mode, 48, 5, bg_mode);
+        default: return 0;
     }
 }
 
-inline std::string getConsoleColorStr(const color_t &color, const CB_OPTS::Types &opts = CB_OPTS::BOTH) {
+inline int getConsoleColorStr(char *buf, const int &length, const color_t &color, const CB_OPTS::Types &opts = CB_OPTS::BOTH) {
     if (is_ansi_256_color_mode)
-        return getConsoleColorAnsi256Str(color);
+        return getConsoleColorAnsi256Str(buf, length, color);
     color_t fg_mode, bg_mode;
     toAnsiColorMode(color, fg_mode, bg_mode);
     switch (opts) {
-        case CB_OPTS::BG: return getModesStr(2, fg_mode);
-        case CB_OPTS::FG: return getModesStr(1, bg_mode);
-        case CB_OPTS::BOTH: return getModesStr(2, fg_mode, 1, bg_mode);
-        default: return "";
+        case CB_OPTS::BG: return getModesStr(buf, length, 2, fg_mode);
+        case CB_OPTS::FG: return getModesStr(buf, length, 1, bg_mode);
+        case CB_OPTS::BOTH: return getModesStr(buf, length, 2, fg_mode, 1, bg_mode);
+        default: return 0;
     }
 }
 
@@ -699,8 +759,10 @@ void console::write(int x, int y, std::string &str, color_t c) {
 }
 
 void console::write(char *fb, color_t *cb, int length) {
-    std::string buf;
+    const int buflen = length > 200 ? length : 200;
+    char buf[buflen];
     color_t fg_mode, bg_mode, fg, bg;
+    int offset = 0;
 
     // Should be the right color conversion eventually
     toAnsiColorMode(*cb, fg_mode, bg_mode);
@@ -712,22 +774,25 @@ void console::write(char *fb, color_t *cb, int length) {
 
         CB_OPTS::Types mode = CB_OPTS::Types((fg_mode == fg ? 1 : 0) | (bg_mode == bg ? 2 : 0));
 
-        buf += getConsoleColorStr(color, mode);
-        buf += ch;
+        if (offset + 50 > buflen) {
+            writeBuffer(buf, offset);
+            offset = 0;
+        }
+
+        offset += getConsoleColorStr(buf+offset, buflen-offset, color, mode);
+        buf[offset++] = ch;
 
         fg_mode = fg, bg_mode = bg;
-        
-        //setConsoleColor(cb[i]);
-        //writeChar(fb[i]);
     }
 
-    writeString(buf);
+    writeBuffer(buf, offset);
 }
 
 void console::write(wchar_t *fb, color_t *cb, int length) {
-    std::string buf;
+    const int buflen = length > 200 ? length : 200;
+    char utf8buf[4], buf[buflen];
     color_t fg_mode, bg_mode, fg, bg;
-    char utf8buf[4];
+    int offset = 0;
 
     toAnsiColorMode(*cb, fg_mode, bg_mode);
     for (int i = 0; i < length; i++) {
@@ -738,18 +803,18 @@ void console::write(wchar_t *fb, color_t *cb, int length) {
 
         CB_OPTS::Types mode = CB_OPTS::Types((fg_mode == fg ? 1 : 0) | (bg_mode == bg ? 2 : 0));
 
-        int len = toUTF8Str(&ch, 1, utf8buf, 4);
+        if (offset + 50 > buflen) {
+            writeBuffer(buf, offset);
+            offset = 0;
+        }
 
-        buf += getConsoleColorStr(color, mode);
-        buf += std::string(buf, len);
+        offset += getConsoleColorStr(buf+offset, buflen, color, mode);
+        offset += toUTF8Str(&ch, 1, buf+offset, 4);
 
         fg_mode = fg, bg_mode = bg;
-
-        //setConsoleColor(cb[i]);
-        //writeWChar(fb[i]);
     }
 
-    writeString(buf);
+    writeBuffer(buf, offset);
 }
 
 void console::write(int x, int y, wchar_t character) {
