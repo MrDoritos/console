@@ -9,6 +9,7 @@ Questions for myself
 
 - How often does stdout flush, and how does that change on a per system basis
     or with changes to TCSETATTR
+    - Still unsure, curses seems to do something different
 
 - How do we offer support for wide char unicode (or UTF-16?)
     A: I am converting them, ez
@@ -18,8 +19,6 @@ Questions for myself
 
 - How do nested alternate buffers work? By pid?
     A: Fine, pipe isn't going to affect the terminal
-
-- Seems to be some multiple construction, please verify
 
 */
 
@@ -44,7 +43,6 @@ bool console::ready = false;
 /*
     Not exposed by a header yet
 */
-static bool already_constructed = false;
 bool activate_alternate_screen_by_default = true;
 bool reset_text_mode_by_default = true;
 bool is_cursor_visible = false;
@@ -81,9 +79,6 @@ namespace DEC_CODES {
 };
 
 console::constructor::constructor() {
-    if (already_constructed) //issues with multiple construction
-        return;
-
     if (activate_alternate_screen_by_default)
         enableAlternateBuffer();
 
@@ -97,17 +92,12 @@ console::constructor::constructor() {
     setLineBuffering(false);
 
     ready = true;
-    already_constructed = true;
 }
 
 console::constructor::~constructor() {
-    if (!already_constructed)
-        return;
-
-    ready = false;
-    already_constructed = false;
-
-    //setLineBuffering(true);
+     ready = false;
+ 
+    //setLineBuffering(true); // We will use the termios_start state
 
     tcsetattr(STDIN_FILENO, TCSANOW, &termios_start);
 
